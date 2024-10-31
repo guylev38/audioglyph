@@ -1,2 +1,2 @@
-# audioglyph
+# AudioGlyph
 Simple Audiobook GUI Interface
