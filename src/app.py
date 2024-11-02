@@ -1,7 +1,8 @@
 import customtkinter as ck
+from tkinter import filedialog
 from frames.chapters_frame import ChaptersFrame
 from frames.player_frame import PlayerFrame
-from PIL import Image, ImageTk
+from PIL import Image
 
 # Constants 
 WIN_WIDTH = "800"
@@ -22,8 +23,14 @@ class App(ck.CTk):
       self.rowconfigure(i, weight=1)
       self.columnconfigure(i, weight=1)
 
+    
+    self.open_btn = ck.CTkButton(self, text="Open", width=50, height=50, command=self.open_file)
+    self.open_btn.grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
 
-    chapters = ["Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4", "Chapter 5", "Chapter 6", "Chapter 7"]
+    chapters = []
+    for i in range(36):
+      chapters.append(f"Chapter {i+1}")
+
     self.chapters_frame = ChaptersFrame(self, chapters)
     self.chapters_frame.grid(row=0, column=5, rowspan=6, padx=0, pady=0, sticky="ns")
 
@@ -36,9 +43,13 @@ class App(ck.CTk):
     self.ck_image = ck.CTkImage(light_image=self.image, dark_image=self.image, size=(500,500))
 
     self.cover_image = ck.CTkLabel(self, image=self.ck_image, text="")
-    self.cover_image.grid(row=0, column=0, rowspan=5, columnspan=5 ,padx=0, pady=0, sticky="nsew")
+    self.cover_image.grid(row=1, column=0, rowspan=4, columnspan=5 ,padx=0, pady=0, sticky="nsew")
 
 
+  def open_file(self):
+    dir_path = filedialog.askdirectory(title="Open Directory")
+    if dir_path:
+      print(f"Selected dir: {dir_path}")
 
 app = App()
 app.mainloop()

@@ -1,8 +1,8 @@
 import customtkinter as ck
 
 class ChaptersFrame(ck.CTkScrollableFrame):
-  def __init__(self, master, chapters):
-    super().__init__(master, label_text="Chapters")
+  def __init__(self, master, chapters, border_width=2):
+    super().__init__(master, border_width=border_width, label_text="Chapters")
     self.chapters = chapters
 
     self.columnconfigure(0, weight=1)

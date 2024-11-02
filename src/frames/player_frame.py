@@ -1,8 +1,8 @@
 import customtkinter as ck
 
 class PlayerFrame(ck.CTkFrame):
-  def __init__(self, master):
-    super().__init__(master)
+  def __init__(self, master, border_width=2):
+    super().__init__(master, border_width=border_width)
 
 
     self.grid_columnconfigure(0, weight=0)
