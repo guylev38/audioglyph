@@ -7,3 +7,4 @@ Audioglyph aims to solve that problem.
 
 
 ❗Currently made with python but I'm considering moving to raylib or another, more well rounded GUI library.
+
