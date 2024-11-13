@@ -62,7 +62,9 @@ obj/x64/Debug/audioglyph/main.o: ../../src/main.c \
  /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h \
  /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
  /usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h \
- /usr/include/x86_64-linux-gnu/bits/iscanonical.h
+ /usr/include/x86_64-linux-gnu/bits/iscanonical.h \
+ ../../src/../include/gui_window_file_dialog.h \
+ ../../src/../include/../include/raygui.h
 /usr/include/stdc-predef.h:
 ../external/raylib-master/src/raylib.h:
 /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h:
@@ -135,3 +137,5 @@ obj/x64/Debug/audioglyph/main.o: ../../src/main.c \
 /usr/include/x86_64-linux-gnu/bits/mathcalls.h:
 /usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h:
 /usr/include/x86_64-linux-gnu/bits/iscanonical.h:
+../../src/../include/gui_window_file_dialog.h:
+../../src/../include/../include/raygui.h:
