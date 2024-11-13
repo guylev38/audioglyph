@@ -1,4 +1,4 @@
 # AudioGlyph
-Simple Audiobook GUI Interface
+Simple Audiobook GUI Interface made with Raylib/Raygui.
 
-<img src="src/assets/audioglyph_logo.png">
+<img src="resources/audioglyph_logo.png">
