@@ -1,10 +1,6 @@
 # AudioGlyph
-Simple Audiobook GUI.
+Simple Audiobook GUI made with C and raylib/raygui.
+
 ## Vision
-Today there aren't any free and open source GUIs for managing audiobooks like there is Calibre for Ebooks.
+Today there aren't any free and open source GUIs for managing audiobooks (i.g. Calibre for Ebooks).
 Audioglyph aims to solve that problem.
-
-
-
-❗Currently made with python but I'm considering moving to raylib or another, more well rounded GUI library.
-
