@@ -4,8 +4,7 @@
 #include "raygui.h"
 
 #undef RAYGUI_IMPLEMENTATION
-#define GUI_WINDOW_FILE_DIALOG_IMPLEMENTATION
-#include "../include/gui_window_file_dialog.h"
+
 
 #include "../include/tinyfiledialogs.h"
 
@@ -13,7 +12,6 @@
 #define HEIGHT (768)
 
 
-char** getChapterList(DIR *dir);
 
 int main()
 {
