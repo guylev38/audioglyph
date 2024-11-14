@@ -7,9 +7,12 @@
 #define GUI_WINDOW_FILE_DIALOG_IMPLEMENTATION
 #include "../include/gui_window_file_dialog.h"
 
+#include "../include/tinyfiledialogs.h"
+
 
 #define WIDTH (800)
 #define HEIGHT (600)
+
 
 int main()
 {
@@ -56,7 +59,6 @@ int main()
 	const int PLAY_BUTTON_HEIGHT = 25;
 	const int PLAY_BUTTON_X = CONTROLS_PANEL_X + 20;
 	const int PLAY_BUTTON_Y = HEIGHT - (CONTROLS_PANEL_HEIGHT / 2);
-	printf("Play Button h : %d\n Controls panel h: %d\n", PLAY_BUTTON_HEIGHT, CONTROLS_PANEL_HEIGHT);
 	const Rectangle PLAY_BUTTON_REC = { PLAY_BUTTON_X, PLAY_BUTTON_Y, PLAY_BUTTON_WIDTH, PLAY_BUTTON_HEIGHT};
 
 	// Pause Button
@@ -66,16 +68,26 @@ int main()
 	const int PAUSE_BUTTON_Y = PLAY_BUTTON_Y;
 	const Rectangle PAUSE_BUTTON_REC = { PAUSE_BUTTON_X, PAUSE_BUTTON_Y, PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT};
 
+	// Stop Button
+	const int STOP_BUTTON_WIDTH = 25;
+	const int STOP_BUTTON_HEIGHT = 25;
+	const int STOP_BUTTON_X = PAUSE_BUTTON_X + 30;
+	const int STOP_BUTTON_Y = PLAY_BUTTON_Y;
+	const Rectangle STOP_BUTTON_REC = { STOP_BUTTON_X, STOP_BUTTON_Y, STOP_BUTTON_WIDTH, STOP_BUTTON_HEIGHT};
+
+	const int PROG_BAR_WIDTH = CHAPTERS_PANEL_WIDTH - STOP_BUTTON_WIDTH;
+	const int PROG_BAR_HEIGHT = 30;
+	const int PROG_BAR_X = STOP_BUTTON_X + 100;
+	const int PROG_BAR_Y = PLAY_BUTTON_Y - 3;
+	const Rectangle PROG_BAR_REC = { PROG_BAR_X, PROG_BAR_Y, PROG_BAR_WIDTH, PROG_BAR_HEIGHT };
+	float progress = 0.0f;
 
 	/* ---- Sizes END ----*/ 
 
-	GuiWindowFileDialogState fileDialogState = InitGuiWindowFileDialog(GetWorkingDirectory());
-	bool exitWindow = false;
-	char fileNametoLoad[512] = { 0 };
-
-
 
 	bool openButtonClicked = false;
+
+
 
 
 	while (!WindowShouldClose())
@@ -91,25 +103,46 @@ int main()
 		// Controls Panel
 		GuiPanel(CONTROLS_PANEL_REC, "Controls");
 
+		// Play Button
+		GuiButton(PLAY_BUTTON_REC, GuiIconText(131, NULL));
 
-		if(fileDialogState.windowActive) GuiLock();
+		// Pause Button
+		GuiButton(PAUSE_BUTTON_REC, GuiIconText(132, NULL));
+
+		// Stop Button
+		GuiButton(STOP_BUTTON_REC, GuiIconText(133, NULL));
+
+		// Progress Bar
+		GuiProgressBar(PROG_BAR_REC, "0:30", "1:00", &progress, 0.0f, 1.0f);
+
+
+		/* ----- Open Button and File Dialog ----- */
 
 		// Open Button
 		if(GuiButton(OPEN_BUTTON_REC, GuiIconText(3, NULL))) {
-			fileDialogState.windowActive = true;
+			progress += 0.1f;
+			const char *filterPatterns[1] = { "*.txt" };
+			const char *filename = tinyfd_openFileDialog(
+				"Select a file",
+				GetWorkingDirectory(), 
+				1, 
+				filterPatterns,
+				NULL,
+				0
+			);
+
+			if(filename) {
+				printf("Selected File: %s\n", filename);
+			} else {
+				printf("User canceled the dialog.\n");
+			}
 		}
 
-		GuiUnlock();
+		/* -------------------------------------- */
 
-		GuiButton(PLAY_BUTTON_REC, GuiIconText(131, NULL));
-		GuiButton(PAUSE_BUTTON_REC, GuiIconText(132, NULL));
-		// GuiButton(PAUSE_BUTTON_REC, GuiIconText(133, NULL));
 
-		// if(GuiButton((Rectangle) {CHAPTERS_PANEL_X + 10 , CHAPTERS_PANEL_Y + 50, CHAPTERS_PANEL_WIDTH - 20, 50}, "Chapter 1")){
-		// 	buttonClicked = true;
-		// }
 
-		GuiWindowFileDialog(&fileDialogState);
+
 
 		EndDrawing();
 	}

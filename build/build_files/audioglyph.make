@@ -31,6 +31,10 @@ endef
 define POSTBUILDCMDS
 endef
 
+# TinyFd 
+TINYFD_SRC = ../../include/tinyfiledialogs.c
+TINYFD_OBJ = $(OBJDIR)/tinyfiledialogs.o
+
 ifeq ($(config),debug_x64)
 TARGETDIR = ../../bin/Debug
 TARGET = $(TARGETDIR)/audioglyph
@@ -106,11 +110,15 @@ endif
 # File sets
 # #############################################
 
-GENERATED :=
-OBJECTS :=
+GENERATED := 
+OBJECTS := 
 
 GENERATED += $(OBJDIR)/main.o
 OBJECTS += $(OBJDIR)/main.o
+
+GENERATED += $(TINYFD_OBJ)
+OBJECTS += $(TINYFD_OBJ)
+
 
 # Rules
 # #############################################
@@ -139,6 +147,11 @@ ifeq (posix,$(SHELLTYPE))
 else
 	$(SILENT) mkdir $(subst /,\\,$(OBJDIR))
 endif
+
+# Compile TinyFd
+$(TINYFD_OBJ): $(TINYFD_SRC)
+	@echo "Compiling TinyFD"
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
 clean:
 	@echo Cleaning audioglyph
