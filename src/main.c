@@ -1,3 +1,4 @@
+#include <string.h>
 #include "raylib.h"
 
 #define RAYGUI_IMPLEMENTATION
@@ -5,13 +6,13 @@
 
 #undef RAYGUI_IMPLEMENTATION
 
-
 #include "../include/tinyfiledialogs.h"
+#include "dirent.h"
 
 #define WIDTH (1024)
 #define HEIGHT (768)
 
-
+char** getChapterList(DIR *dir, int *len);
 
 int main()
 {
@@ -21,8 +22,9 @@ int main()
 	SetTargetFPS(60);
 	GuiLoadStyle("themes/style_dark.rgs");
 			
+	int i; // Iterator
 
-		/* ---- Sizes START ----*/
+	/* ---- Sizes START ----*/
 
 	// Chapters Panel
 	const int CHAPTERS_PANEL_WIDTH = 250;
@@ -85,8 +87,12 @@ int main()
 	bool openButtonClicked = false;
 
 	const char *folderPath;
+	char **chapterList;
+	unsigned int numberOfChapters = 0;
 	Image cover;
 	Texture coverTexture;
+
+	DIR *selectedDir;
 
 	while (!WindowShouldClose())
 	{
@@ -116,29 +122,72 @@ int main()
 
 		// Open Button
 		if(GuiButton(OPEN_BUTTON_REC, GuiIconText(3, NULL))) {
-			progress += 0.1f;
+			numberOfChapters = 0;
 			folderPath = tinyfd_selectFolderDialog(
 				"Select Folder",
 				GetWorkingDirectory()
 			);
+			
+			selectedDir = opendir(folderPath);
+			if(selectedDir == NULL){
+				perror("Failed to open folder");
+				return EXIT_FAILURE;
+			}
+
+			chapterList = getChapterList(selectedDir, &numberOfChapters);			
 
 			// Check if there is cover.png and if it exists 
 			// load it.	
 			if(folderPath){
-				cover = LoadImage(TextFormat("%s" PATH_SEPERATOR "%s", folderPath, "cover.png"));
+				cover = LoadImage(TextFormat("%s/%s", folderPath, "cover.png"));
 				if(IsImageValid(cover)){
 					coverTexture = LoadTextureFromImage(cover);	
 					UnloadImage(cover);
+					DrawTexture(coverTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
 				}
 			}
 		}
 
-		DrawTexture(coverTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
-
 		/* -------------------------------------- */
+
 		EndDrawing();
 	}
 
+	// Free Memory
+	if(numberOfChapters > 0){
+		printf("it is not null");
+		for(i = 0; i<numberOfChapters; i++){
+			free(chapterList[i]);
+		}
+		free(chapterList);
+	}
 	CloseWindow();
-	return 0;
+	return EXIT_SUCCESS;
+}
+
+char** getChapterList(DIR *dir, int *len) {
+	char **chapterList = malloc(500 * sizeof(char*));
+	struct dirent *entry;
+	int i = 0;
+
+	while((entry = readdir(dir)) != NULL){
+		if(entry->d_name[0] == '.')
+			continue;
+		if(IsFileExtension(entry->d_name, ".mp3")){
+			chapterList[i] = strdup(entry->d_name);
+			if(chapterList[i] == NULL){
+				perror("strdup");
+				for(int j=0; j<i; j++){
+					free(chapterList[j]);
+				}
+				free(chapterList);
+				return NULL;
+			}
+			++(*len);
+			++i;
+		}
+	}
+
+	closedir(dir);
+	return chapterList;
 }
