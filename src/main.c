@@ -9,10 +9,11 @@
 
 #include "../include/tinyfiledialogs.h"
 
+#define WIDTH (1024)
+#define HEIGHT (768)
 
-#define WIDTH (800)
-#define HEIGHT (600)
 
+char** getChapterList(DIR *dir);
 
 int main()
 {
@@ -26,15 +27,14 @@ int main()
 		/* ---- Sizes START ----*/
 
 	// Chapters Panel
-	const int CHAPTERS_PANEL_WIDTH = 200;
+	const int CHAPTERS_PANEL_WIDTH = 250;
 	const int CHAPTERS_PANEL_HEIGHT = HEIGHT;
 	const int CHAPTERS_PANEL_X = (WIDTH - CHAPTERS_PANEL_WIDTH);
 	const int CHAPTERS_PANEL_Y = 0;	
 	const Rectangle CHAPTERS_PANEL_REC = {CHAPTERS_PANEL_X, CHAPTERS_PANEL_Y, CHAPTERS_PANEL_WIDTH, CHAPTERS_PANEL_HEIGHT};
 
 	// Top Menu
-	const int TOP_MENU_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH);
-	const int TOP_MENU_HEIGHT = 35;
+	const int TOP_MENU_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH); const int TOP_MENU_HEIGHT = 35;
 	const int TOP_MENU_X = 0;
 	const int TOP_MENU_Y = 0;
 	const Rectangle TOP_MENU_REC = {TOP_MENU_X, TOP_MENU_Y, TOP_MENU_WIDTH, TOP_MENU_HEIGHT};
@@ -48,7 +48,7 @@ int main()
 	const Rectangle CONTROLS_PANEL_REC = { CONTROLS_PANEL_X, CONTROLS_PANEL_Y, CONTROLS_PANEL_WIDTH, CONTROLS_PANEL_HEIGHT };
 
 	// Open Button
-	const int OPEN_BUTTON_WIDTH = 25;
+	const int OPEN_BUTTON_WIDTH = 50;
 	const int OPEN_BUTTON_HEIGHT = 25;
 	const int OPEN_BUTTON_X = TOP_MENU_X + 5;
 	const int OPEN_BUTTON_Y = TOP_MENU_Y + 5;
@@ -75,7 +75,7 @@ int main()
 	const int STOP_BUTTON_Y = PLAY_BUTTON_Y;
 	const Rectangle STOP_BUTTON_REC = { STOP_BUTTON_X, STOP_BUTTON_Y, STOP_BUTTON_WIDTH, STOP_BUTTON_HEIGHT};
 
-	const int PROG_BAR_WIDTH = CHAPTERS_PANEL_WIDTH - STOP_BUTTON_WIDTH;
+	const int PROG_BAR_WIDTH = (CHAPTERS_PANEL_WIDTH - STOP_BUTTON_WIDTH) * 2;
 	const int PROG_BAR_HEIGHT = 30;
 	const int PROG_BAR_X = STOP_BUTTON_X + 100;
 	const int PROG_BAR_Y = PLAY_BUTTON_Y - 3;
@@ -84,16 +84,15 @@ int main()
 
 	/* ---- Sizes END ----*/ 
 
-
 	bool openButtonClicked = false;
 
-
-
+	const char *folderPath;
+	Image cover;
+	Texture coverTexture;
 
 	while (!WindowShouldClose())
 	{
 		BeginDrawing();
-
 		// Top Menu Panel	
 		GuiPanel(TOP_MENU_REC, NULL); 
 
@@ -113,37 +112,32 @@ int main()
 		GuiButton(STOP_BUTTON_REC, GuiIconText(133, NULL));
 
 		// Progress Bar
-		GuiProgressBar(PROG_BAR_REC, "0:30", "1:00", &progress, 0.0f, 1.0f);
-
+		GuiProgressBar(PROG_BAR_REC, "0:00", "1:00", &progress, 0.0f, 1.0f);
 
 		/* ----- Open Button and File Dialog ----- */
 
 		// Open Button
 		if(GuiButton(OPEN_BUTTON_REC, GuiIconText(3, NULL))) {
 			progress += 0.1f;
-			const char *filterPatterns[1] = { "*.txt" };
-			const char *filename = tinyfd_openFileDialog(
-				"Select a file",
-				GetWorkingDirectory(), 
-				1, 
-				filterPatterns,
-				NULL,
-				0
+			folderPath = tinyfd_selectFolderDialog(
+				"Select Folder",
+				GetWorkingDirectory()
 			);
 
-			if(filename) {
-				printf("Selected File: %s\n", filename);
-			} else {
-				printf("User canceled the dialog.\n");
+			// Check if there is cover.png and if it exists 
+			// load it.	
+			if(folderPath){
+				cover = LoadImage(TextFormat("%s" PATH_SEPERATOR "%s", folderPath, "cover.png"));
+				if(IsImageValid(cover)){
+					coverTexture = LoadTextureFromImage(cover);	
+					UnloadImage(cover);
+				}
 			}
 		}
 
+		DrawTexture(coverTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
+
 		/* -------------------------------------- */
-
-
-
-
-
 		EndDrawing();
 	}
 
