@@ -12,7 +12,14 @@
 #define WIDTH (1024)
 #define HEIGHT (768)
 
-char** getChapterList(DIR *dir, int *len);
+typedef struct Chapter{
+	char* name;
+	char* path;
+	bool isListenedTo;	
+} Chapter;
+
+Chapter *getChapterList(DIR *dir, int *len, char *dirPath);
+char *removeFileExtension(const char *filename);
 
 int main()
 {
@@ -87,7 +94,7 @@ int main()
 	bool openButtonClicked = false;
 
 	const char *folderPath;
-	char **chapterList;
+	Chapter *chapterList;
 	unsigned int numberOfChapters = 0;
 	Image cover;
 	Texture coverTexture;
@@ -134,7 +141,7 @@ int main()
 				return EXIT_FAILURE;
 			}
 
-			chapterList = getChapterList(selectedDir, &numberOfChapters);			
+			chapterList = getChapterList(selectedDir, &numberOfChapters, folderPath);			
 
 			// Check if there is cover.png and if it exists 
 			// load it.	
@@ -157,7 +164,9 @@ int main()
 	if(numberOfChapters > 0){
 		printf("it is not null");
 		for(i = 0; i<numberOfChapters; i++){
-			free(chapterList[i]);
+			free(chapterList[i].name);
+			free(chapterList[i].path);
+			free(chapterList[i].isListenedTo);
 		}
 		free(chapterList);
 	}
@@ -165,20 +174,26 @@ int main()
 	return EXIT_SUCCESS;
 }
 
-char** getChapterList(DIR *dir, int *len) {
-	char **chapterList = malloc(500 * sizeof(char*));
+Chapter *getChapterList(DIR *dir, int *len, char *dirPath) {
+	Chapter *chapterList = malloc(500 * sizeof(Chapter));
 	struct dirent *entry;
+	char *path;
 	int i = 0;
 
 	while((entry = readdir(dir)) != NULL){
 		if(entry->d_name[0] == '.')
 			continue;
 		if(IsFileExtension(entry->d_name, ".mp3")){
-			chapterList[i] = strdup(entry->d_name);
-			if(chapterList[i] == NULL){
+			path = TextFormat("%s/%s", dirPath, entry->d_name);
+			chapterList[i].path = strdup(path);
+			chapterList[i].name = removeFileExtension(entry->d_name);
+			chapterList[i].isListenedTo = false;
+			if(chapterList[i].path == NULL){
 				perror("strdup");
 				for(int j=0; j<i; j++){
-					free(chapterList[j]);
+					free(chapterList[j].name);
+					free(chapterList[j].path);
+					free(chapterList[j].isListenedTo);
 				}
 				free(chapterList);
 				return NULL;
@@ -191,3 +206,25 @@ char** getChapterList(DIR *dir, int *len) {
 	closedir(dir);
 	return chapterList;
 }
+
+char *removeFileExtension(const char *filename){
+	const char *dot = strrchr(filename, '.');
+
+	if(!dot || dot == filename){
+		return strdup(filename);
+	}
+
+	size_t length = dot - filename;
+
+	char *new_filename = malloc(length + 1);
+	if(new_filename == NULL){
+		perror("Failed to allocate memory for new filename");
+		return NULL;
+	}
+
+	strncpy(new_filename, filename, length);
+	new_filename[length] = '\0';
+
+	return new_filename;
+}
+
