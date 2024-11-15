@@ -18,7 +18,7 @@ typedef struct Chapter{
 	bool isListenedTo;	
 } Chapter;
 
-Chapter *getChapterList(DIR *dir, int *len, char *dirPath);
+Chapter *getChapterList(DIR *dir, int *len, const char *dirPath);
 char *removeFileExtension(const char *filename);
 
 int main()
@@ -29,7 +29,7 @@ int main()
 	SetTargetFPS(60);
 	GuiLoadStyle("themes/style_dark.rgs");
 			
-	int i; // Iterator
+	size_t i; // Iterator
 
 	/* ---- Sizes START ----*/
 
@@ -143,6 +143,10 @@ int main()
 
 			chapterList = getChapterList(selectedDir, &numberOfChapters, folderPath);			
 
+			for(i = 0; i<numberOfChapters; i++){
+				printf("\tChapter:\nname - %s\npath-%s", chapterList[i].name, chapterList[i].path);
+			}	
+
 			// Check if there is cover.png and if it exists 
 			// load it.	
 			if(folderPath){
@@ -166,7 +170,6 @@ int main()
 		for(i = 0; i<numberOfChapters; i++){
 			free(chapterList[i].name);
 			free(chapterList[i].path);
-			free(chapterList[i].isListenedTo);
 		}
 		free(chapterList);
 	}
@@ -174,7 +177,7 @@ int main()
 	return EXIT_SUCCESS;
 }
 
-Chapter *getChapterList(DIR *dir, int *len, char *dirPath) {
+Chapter *getChapterList(DIR *dir, int *len, const char *dirPath) {
 	Chapter *chapterList = malloc(500 * sizeof(Chapter));
 	struct dirent *entry;
 	char *path;
@@ -193,7 +196,6 @@ Chapter *getChapterList(DIR *dir, int *len, char *dirPath) {
 				for(int j=0; j<i; j++){
 					free(chapterList[j].name);
 					free(chapterList[j].path);
-					free(chapterList[j].isListenedTo);
 				}
 				free(chapterList);
 				return NULL;
