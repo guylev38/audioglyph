@@ -19,7 +19,6 @@ typedef struct Chapter{
 } Chapter;
 
 Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath);
-Chapter getChapterByName(Chapter *chapters, char *name, size_t len);
 char *removeFileExtension(const char *filename);
 const char **getChapterNames(Chapter *chapters, size_t len);
 
@@ -51,9 +50,9 @@ int main()
 
 	// Chapters List View
 	const int CHAPTERS_LIST_VIEW_WIDTH = CHAPTERS_PANEL_WIDTH;
-	const int CHAPTERS_LIST_VIEW_HEIGHT = (HEIGHT - (TOP_MENU_HEIGHT - 10));
+	const int CHAPTERS_LIST_VIEW_HEIGHT = (HEIGHT - TOP_MENU_HEIGHT + 12);
 	const int CHAPTERS_LIST_VIEW_X = CHAPTERS_PANEL_X;
-	const int CHAPTERS_LIST_VIEW_Y = CHAPTERS_PANEL_Y + TOP_MENU_HEIGHT;
+	const int CHAPTERS_LIST_VIEW_Y = CHAPTERS_PANEL_Y + (TOP_MENU_HEIGHT - 12);
 	const Rectangle CHAPTERS_LIST_VIEW_REC = { CHAPTERS_LIST_VIEW_X, CHAPTERS_LIST_VIEW_Y, CHAPTERS_LIST_VIEW_WIDTH, CHAPTERS_LIST_VIEW_HEIGHT };
 	int scrollIndex = 0;
 	int activeItem = -1;
@@ -112,12 +111,14 @@ int main()
 
 	const char *folderPath;
 	Chapter *chapters;
+	Chapter currentChapter;
 	const char **names;
 	size_t chaptersLen = 0;
 	Image cover;
 	Texture coverTexture;
 	DIR *selectedDir;
 	int listViewRes;
+
 
 	while (!WindowShouldClose())
 	{
@@ -131,8 +132,8 @@ int main()
 
 		if(folderPath != NULL){
 			listViewRes = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
+			currentChapter = chapters[activeItem];
 		}	
-
 		// Controls Panel
 		GuiPanel(CONTROLS_PANEL_REC, "Controls");
 
@@ -202,7 +203,7 @@ int main()
 Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath) {
 	Chapter *chapterList = malloc(500 * sizeof(Chapter));
 	struct dirent *entry;
-	char *path;
+	const char *path;
 	size_t i = 0;
 
 	while((entry = readdir(dir)) != NULL){
@@ -238,10 +239,6 @@ const char **getChapterNames(Chapter *chapters, size_t len){
 		names[i] = strdup(chapters[i].name);
 		if(names[i] == NULL){
 			perror("strdup");
-			for(size_t j=0; j<i; i++){
-				free(names[j]);
-			}
-			free(names);
 			return NULL;
 		}
 	}
@@ -269,4 +266,3 @@ char *removeFileExtension(const char *filename){
 
 	return new_filename;
 }
-
