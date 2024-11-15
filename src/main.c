@@ -18,8 +18,10 @@ typedef struct Chapter{
 	bool isListenedTo;	
 } Chapter;
 
-Chapter *getChapterList(DIR *dir, int *len, const char *dirPath);
+Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath);
+Chapter getChapterByName(Chapter *chapters, char *name, size_t len);
 char *removeFileExtension(const char *filename);
+const char **getChapterNames(Chapter *chapters, size_t len);
 
 int main()
 {
@@ -41,11 +43,21 @@ int main()
 	const Rectangle CHAPTERS_PANEL_REC = {CHAPTERS_PANEL_X, CHAPTERS_PANEL_Y, CHAPTERS_PANEL_WIDTH, CHAPTERS_PANEL_HEIGHT};
 
 	// Top Menu
-	const int TOP_MENU_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH); const int TOP_MENU_HEIGHT = 35;
+	const int TOP_MENU_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH); 
+	const int TOP_MENU_HEIGHT = 35;
 	const int TOP_MENU_X = 0;
 	const int TOP_MENU_Y = 0;
 	const Rectangle TOP_MENU_REC = {TOP_MENU_X, TOP_MENU_Y, TOP_MENU_WIDTH, TOP_MENU_HEIGHT};
-	
+
+	// Chapters List View
+	const int CHAPTERS_LIST_VIEW_WIDTH = CHAPTERS_PANEL_WIDTH;
+	const int CHAPTERS_LIST_VIEW_HEIGHT = (HEIGHT - (TOP_MENU_HEIGHT - 10));
+	const int CHAPTERS_LIST_VIEW_X = CHAPTERS_PANEL_X;
+	const int CHAPTERS_LIST_VIEW_Y = CHAPTERS_PANEL_Y + TOP_MENU_HEIGHT;
+	const Rectangle CHAPTERS_LIST_VIEW_REC = { CHAPTERS_LIST_VIEW_X, CHAPTERS_LIST_VIEW_Y, CHAPTERS_LIST_VIEW_WIDTH, CHAPTERS_LIST_VIEW_HEIGHT };
+	int scrollIndex = 0;
+	int activeItem = -1;
+	int focus = activeItem;
 
 	// Controls Panel
 	const int CONTROLS_PANEL_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH);
@@ -89,26 +101,37 @@ int main()
 	const Rectangle PROG_BAR_REC = { PROG_BAR_X, PROG_BAR_Y, PROG_BAR_WIDTH, PROG_BAR_HEIGHT };
 	float progress = 0.0f;
 
+	const int CHAPTER_BUTTON_WIDTH = 125;
+	const int CHAPTER_BUTTON_HEIGHT = 50;
+	const int CHAPTER_BUTTON_X = (WIDTH - CHAPTERS_PANEL_WIDTH);
+	const int CHAPTER_BUTTON_Y = (TOP_MENU_HEIGHT + 5);
+
 	/* ---- Sizes END ----*/ 
 
 	bool openButtonClicked = false;
 
 	const char *folderPath;
-	Chapter *chapterList;
-	unsigned int numberOfChapters = 0;
+	Chapter *chapters;
+	const char **names;
+	size_t chaptersLen = 0;
 	Image cover;
 	Texture coverTexture;
-
 	DIR *selectedDir;
+	int listViewRes;
 
 	while (!WindowShouldClose())
 	{
 		BeginDrawing();
+
 		// Top Menu Panel	
 		GuiPanel(TOP_MENU_REC, NULL); 
 
 		// Chapters Panel
 		GuiPanel(CHAPTERS_PANEL_REC, "Chapters"); 
+
+		if(folderPath != NULL){
+			listViewRes = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
+		}	
 
 		// Controls Panel
 		GuiPanel(CONTROLS_PANEL_REC, "Controls");
@@ -129,7 +152,7 @@ int main()
 
 		// Open Button
 		if(GuiButton(OPEN_BUTTON_REC, GuiIconText(3, NULL))) {
-			numberOfChapters = 0;
+			chaptersLen = 0;
 			folderPath = tinyfd_selectFolderDialog(
 				"Select Folder",
 				GetWorkingDirectory()
@@ -141,11 +164,10 @@ int main()
 				return EXIT_FAILURE;
 			}
 
-			chapterList = getChapterList(selectedDir, &numberOfChapters, folderPath);			
+			chapters = getChapterList(selectedDir, &chaptersLen, folderPath);			
+			names = getChapterNames(chapters, chaptersLen);
+			activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
 
-			for(i = 0; i<numberOfChapters; i++){
-				printf("\tChapter:\nname - %s\npath-%s", chapterList[i].name, chapterList[i].path);
-			}	
 
 			// Check if there is cover.png and if it exists 
 			// load it.	
@@ -160,28 +182,28 @@ int main()
 		}
 
 		/* -------------------------------------- */
-
+		
 		EndDrawing();
 	}
 
 	// Free Memory
-	if(numberOfChapters > 0){
+	if(chaptersLen > 0){
 		printf("it is not null");
-		for(i = 0; i<numberOfChapters; i++){
-			free(chapterList[i].name);
-			free(chapterList[i].path);
+		for(i = 0; i<chaptersLen; i++){
+			free(chapters[i].name);
+			free(chapters[i].path);
 		}
-		free(chapterList);
+		free(chapters);
 	}
 	CloseWindow();
 	return EXIT_SUCCESS;
 }
 
-Chapter *getChapterList(DIR *dir, int *len, const char *dirPath) {
+Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath) {
 	Chapter *chapterList = malloc(500 * sizeof(Chapter));
 	struct dirent *entry;
 	char *path;
-	int i = 0;
+	size_t i = 0;
 
 	while((entry = readdir(dir)) != NULL){
 		if(entry->d_name[0] == '.')
@@ -207,6 +229,24 @@ Chapter *getChapterList(DIR *dir, int *len, const char *dirPath) {
 
 	closedir(dir);
 	return chapterList;
+}
+
+const char **getChapterNames(Chapter *chapters, size_t len){
+	const char **names = malloc(len * sizeof(char *));
+	size_t i;
+	for(i = 0; i<len; i++){
+		names[i] = strdup(chapters[i].name);
+		if(names[i] == NULL){
+			perror("strdup");
+			for(size_t j=0; j<i; i++){
+				free(names[j]);
+			}
+			free(names);
+			return NULL;
+		}
+	}
+	names[len] = NULL;
+	return names;
 }
 
 char *removeFileExtension(const char *filename){
