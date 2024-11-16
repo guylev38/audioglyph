@@ -32,8 +32,11 @@ define POSTBUILDCMDS
 endef
 
 # TinyFd 
-TINYFD_SRC = ../../include/tinyfiledialogs.c
 TINYFD_OBJ = $(OBJDIR)/tinyfiledialogs.o
+
+# SRC
+SRC_DIR = ../../src
+INCLUDE_DIR = ../../include
 
 ifeq ($(config),debug_x64)
 TARGETDIR = ../../bin/Debug
@@ -119,6 +122,8 @@ OBJECTS += $(OBJDIR)/main.o
 GENERATED += $(TINYFD_OBJ)
 OBJECTS += $(TINYFD_OBJ)
 
+GENERATED += $(OBJDIR)/chapter.o $(OBJDIR)/utils.o
+OBJECTS += $(OBJDIR)/chapter.o $(OBJDIR)/utils.o
 
 # Rules
 # #############################################
@@ -149,9 +154,20 @@ else
 endif
 
 # Compile TinyFd
-$(TINYFD_OBJ): $(TINYFD_SRC)
+$(TINYFD_OBJ): $(SRC_DIR)/tinyfiledialogs.c
 	@echo "Compiling TinyFD"
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+
+# Compile chapter.c
+$(OBJDIR)/chapter.o: $(SRC_DIR)/chapter.c  $(INCLUDE_DIR)/chapter.h
+	@echo "Compiling chapter.c"
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+
+# Compile utils.c
+$(OBJDIR)/utils.o: $(SRC_DIR)/utils.c  $(INCLUDE_DIR)/utils.h
+	@echo "Compiling utils.c"
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+
 
 clean:
 	@echo Cleaning audioglyph
@@ -187,7 +203,7 @@ endif
 # File Rules
 # #############################################
 
-$(OBJDIR)/main.o: ../../src/main.c
+$(OBJDIR)/main.o: $(SRC_DIR)/main.c
 	@echo "$(notdir $<)"
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
