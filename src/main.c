@@ -1,4 +1,6 @@
 #include <string.h>
+#include <stdio.h>
+
 #include "raylib.h"
 
 #define RAYGUI_IMPLEMENTATION
@@ -6,34 +8,20 @@
 
 #undef RAYGUI_IMPLEMENTATION
 
-#include "../include/tinyfiledialogs.h"
+#include "tinyfiledialogs.h"
 #include "dirent.h"
+#include "chapter.h"
+#include "utils.h"
 
 #define WIDTH (1024)
 #define HEIGHT (768)
 
-typedef struct Chapter{
-	char* name;
-	char* path;
-	int pos;
-	bool isListenedTo;	
-} Chapter;
-
-Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath);
-char *removeFileExtension(const char *filename);
-const char **getChapterNames(Chapter *chapters, size_t len);
-int extractChapterPos(const char *chapterName);
-void sortChapters(Chapter *chapters, size_t len);
-
 int main()
 {
 	InitWindow(WIDTH, HEIGHT, "Audioglyph");
-	SetWindowMaxSize(WIDTH, HEIGHT);
 	SetExitKey(KEY_ESCAPE);
 	SetTargetFPS(60);
-	GuiLoadStyle("themes/style_dark.rgs");
-			
-	size_t i; // Iterator
+	GuiLoadStyle("themes/style_dark.rgs"); // Set dark theme
 
 	/* ---- Sizes START ----*/
 
@@ -96,6 +84,7 @@ int main()
 	const int STOP_BUTTON_Y = PLAY_BUTTON_Y;
 	const Rectangle STOP_BUTTON_REC = { STOP_BUTTON_X, STOP_BUTTON_Y, STOP_BUTTON_WIDTH, STOP_BUTTON_HEIGHT};
 
+	// Progress Bar
 	const int PROG_BAR_WIDTH = (CHAPTERS_PANEL_WIDTH - STOP_BUTTON_WIDTH) * 2;
 	const int PROG_BAR_HEIGHT = 30;
 	const int PROG_BAR_X = STOP_BUTTON_X + 100;
@@ -103,6 +92,7 @@ int main()
 	const Rectangle PROG_BAR_REC = { PROG_BAR_X, PROG_BAR_Y, PROG_BAR_WIDTH, PROG_BAR_HEIGHT };
 	float progress = 0.0f;
 
+	// Chapter Buttons in list view.
 	const int CHAPTER_BUTTON_WIDTH = 125;
 	const int CHAPTER_BUTTON_HEIGHT = 50;
 	const int CHAPTER_BUTTON_X = (WIDTH - CHAPTERS_PANEL_WIDTH);
@@ -110,17 +100,16 @@ int main()
 
 	/* ---- Sizes END ----*/ 
 
-	bool openButtonClicked = false;
+	size_t i; // Iterator
 
 	const char *folderPath;
-	Chapter *chapters;
-	Chapter currentChapter;
 	const char **names;
+	DIR *selectedDir;
+	Chapter *chapters;
 	size_t chaptersLen = 0;
+	Chapter currentChapter;
 	Image cover;
 	Texture coverTexture;
-	DIR *selectedDir;
-	int listViewRes;
 
 	while (!WindowShouldClose())
 	{ 
@@ -132,10 +121,6 @@ int main()
 		// Chapters Panel
 		GuiPanel(CHAPTERS_PANEL_REC, "Chapters"); 
 
-		if(folderPath != NULL){
-			listViewRes = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
-			currentChapter = chapters[activeItem];
-		}	
 		// Controls Panel
 		GuiPanel(CONTROLS_PANEL_REC, "Controls");
 
@@ -151,11 +136,18 @@ int main()
 		// Progress Bar
 		GuiProgressBar(PROG_BAR_REC, "0:00", "1:00", &progress, 0.0f, 1.0f);
 
-		/* ----- Open Button and File Dialog ----- */
+		// If the list view was initialized then update the current chapter.
+		if(folderPath != NULL){
+			GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
+			currentChapter = chapters[activeItem];
+		}	
+
+		/* ----- Open Button, File Dialog and Render Chapters ----- */
 
 		// Open Button
 		if(GuiButton(OPEN_BUTTON_REC, GuiIconText(3, NULL))) {
 			chaptersLen = 0;
+			// Open folder dialog
 			folderPath = tinyfd_selectFolderDialog(
 				"Select Folder",
 				GetWorkingDirectory()
@@ -169,15 +161,18 @@ int main()
 					return EXIT_FAILURE;
 				}
 
+				/*
+				* Convert each file into the Chapter struct
+				* and then sort it. Afterwards get the names and 
+				* pass them to the list view.
+				*/
 				chapters = getChapterList(selectedDir, &chaptersLen, folderPath);			
 				sortChapters(chapters, chaptersLen);
-				for(i = 0; i < chaptersLen; i++){
-					printf("Chapter: %d\n", chapters[i].pos);
-				}
-			
 				names = getChapterNames(chapters, chaptersLen);
+
 				activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
 
+				// Try to load the cover image
 				cover = LoadImage(TextFormat("%s/%s", folderPath, "cover.png"));
 				if(IsImageValid(cover)){
 					coverTexture = LoadTextureFromImage(cover);	
@@ -198,141 +193,10 @@ int main()
 
 	// Free Memory
 	if(chaptersLen > 0){
-		printf("it is not null\n");
-		for(i = 0; i <chaptersLen; i++){
-			printf("Freeing names[%zu]\n", i);
-			free(names[i]);
-		}
-		printf("Freeing names...");
-		free(names);
-		names = NULL;
-
-		for(i = 0; i<chaptersLen; i++){
-			if(chapters[i].name != NULL){
-				printf("Freeing chapters[%zu].name\n", i);
-				free(chapters[i].name);
-			}
-			if(chapters[i].path != NULL){
-				printf("Freeing chapters[%zu].path\n", i);
-				free(chapters[i].path);
-			}
-		}
-		if(chapters != NULL){
-			printf("Freeing chapters...\n");
-			free(chapters);
-			chapters = NULL;
-		}
+		freeChapterMemory(chapters, names, chaptersLen);
 	}
 
 	UnloadTexture(coverTexture);
-	CloseWindow();
+	CloseWindow(); // Close the window.
 	return EXIT_SUCCESS;
-}
-
-Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath) {
-	Chapter *chapterList = malloc(500 * sizeof(Chapter));
-	struct dirent *entry;
-	const char *path;
-	size_t i = 0;
-
-	while((entry = readdir(dir)) != NULL){
-		if(entry->d_name[0] == '.')
-			continue;
-		if(IsFileExtension(entry->d_name, ".mp3")){
-			path = TextFormat("%s/%s", dirPath, entry->d_name);
-			chapterList[i].path = strdup(path);
-			chapterList[i].name = removeFileExtension(entry->d_name);
-			chapterList[i].isListenedTo = false;
-			chapterList[i].pos = extractChapterPos(chapterList[i].name);
-			if(chapterList[i].path == NULL || chapterList[i].name == NULL){
-				perror("strdup");
-				for(int j=0; j<i; j++){
-					free(chapterList[j].name);
-					free(chapterList[j].path);
-				}
-				free(chapterList);
-				return NULL;
-			}
-			++(*len);
-			++i;
-		}
-	}
-
-	closedir(dir);
-	return chapterList;
-}
-
-const char **getChapterNames(Chapter *chapters, size_t len){
-	const char **names = malloc(len * sizeof(char *));
-	size_t i;
-	for(i = 0; i<len; i++){
-		names[i] = strdup(chapters[i].name);
-		if(names[i] == NULL){
-			perror("strdup");
-			return NULL;
-		}
-	}
-	names[len] = NULL;
-	return names;
-}
-
-char *removeFileExtension(const char *filename){
-	const char *dot = strrchr(filename, '.');
-
-	if(!dot || dot == filename){
-		return strdup(filename);
-	}
-
-	size_t length = dot - filename;
-
-	char *new_filename = malloc(length + 1);
-	if(new_filename == NULL){
-		perror("Failed to allocate memory for new filename");
-		return NULL;
-	}
-
-	strncpy(new_filename, filename, length);
-	new_filename[length] = '\0';
-
-	return new_filename;
-}
-
-int extractChapterPos(const char *chapterName){
-	int number = 0;
-	int found = 0;
-	const char *ptr = chapterName;
-
-	while(*ptr){
-		if(isdigit(*ptr)){
-			number = number * 10 + (*ptr - '0');
-			found = 1;
-		} else if (found){
-			break;
-		}
-		ptr++;
-	}
-	return found ? number : -1;
-}
-
-void sortChapters(Chapter *chapters, size_t len){
-	// TODO: Maybe add support for epilogue and preface in the future.
-	size_t i, j;
-	int swapped;
-	Chapter temp;
-
-	for(i = 0; i < len - 1; i++){
-		swapped = 0;
-		for(j = 0; j < len - i - 1; j++){
-			if(chapters[j].pos > chapters[j + 1].pos){
-				temp = chapters[j];
-				chapters[j] = chapters[j + 1];
-				chapters[j + 1] = temp;
-				swapped = 1;
-			}	
-		}
-
-		if(swapped == 0) {
-			break;
-		}
-	}
 }
