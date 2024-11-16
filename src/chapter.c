@@ -7,7 +7,6 @@
 #include "raylib.h"
 #include "raygui.h"
 
-
 /*
 * Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath)
 * Returns a list of Chapter structs with the path to each chapter file
