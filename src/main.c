@@ -15,12 +15,15 @@
 typedef struct Chapter{
 	char* name;
 	char* path;
+	int pos;
 	bool isListenedTo;	
 } Chapter;
 
 Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath);
 char *removeFileExtension(const char *filename);
 const char **getChapterNames(Chapter *chapters, size_t len);
+int extractChapterPos(const char *chapterName);
+void sortChapters(Chapter *chapters, size_t len);
 
 int main()
 {
@@ -119,9 +122,8 @@ int main()
 	DIR *selectedDir;
 	int listViewRes;
 
-
 	while (!WindowShouldClose())
-	{
+	{ 
 		BeginDrawing();
 
 		// Top Menu Panel	
@@ -158,27 +160,34 @@ int main()
 				"Select Folder",
 				GetWorkingDirectory()
 			);
+
+			// Check if the folder was selected 
+			if(folderPath != NULL){
+				selectedDir = opendir(folderPath);
+				if(selectedDir == NULL){
+					perror("Failed to open folder");
+					return EXIT_FAILURE;
+				}
+
+				chapters = getChapterList(selectedDir, &chaptersLen, folderPath);			
+				sortChapters(chapters, chaptersLen);
+				for(i = 0; i < chaptersLen; i++){
+					printf("Chapter: %d\n", chapters[i].pos);
+				}
 			
-			selectedDir = opendir(folderPath);
-			if(selectedDir == NULL){
-				perror("Failed to open folder");
-				return EXIT_FAILURE;
-			}
+				names = getChapterNames(chapters, chaptersLen);
+				activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
 
-			chapters = getChapterList(selectedDir, &chaptersLen, folderPath);			
-			names = getChapterNames(chapters, chaptersLen);
-			activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
-
-
-			// Check if there is cover.png and if it exists 
-			// load it.	
-			if(folderPath){
 				cover = LoadImage(TextFormat("%s/%s", folderPath, "cover.png"));
 				if(IsImageValid(cover)){
 					coverTexture = LoadTextureFromImage(cover);	
 					UnloadImage(cover);
 					DrawTexture(coverTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
+				} else {
+					printf("Cover image not found\n");
 				}
+			} else {
+				printf("Folder not selected\n");
 			}
 		}
 
@@ -189,13 +198,33 @@ int main()
 
 	// Free Memory
 	if(chaptersLen > 0){
-		printf("it is not null");
-		for(i = 0; i<chaptersLen; i++){
-			free(chapters[i].name);
-			free(chapters[i].path);
+		printf("it is not null\n");
+		for(i = 0; i <chaptersLen; i++){
+			printf("Freeing names[%zu]\n", i);
+			free(names[i]);
 		}
-		free(chapters);
+		printf("Freeing names...");
+		free(names);
+		names = NULL;
+
+		for(i = 0; i<chaptersLen; i++){
+			if(chapters[i].name != NULL){
+				printf("Freeing chapters[%zu].name\n", i);
+				free(chapters[i].name);
+			}
+			if(chapters[i].path != NULL){
+				printf("Freeing chapters[%zu].path\n", i);
+				free(chapters[i].path);
+			}
+		}
+		if(chapters != NULL){
+			printf("Freeing chapters...\n");
+			free(chapters);
+			chapters = NULL;
+		}
 	}
+
+	UnloadTexture(coverTexture);
 	CloseWindow();
 	return EXIT_SUCCESS;
 }
@@ -214,7 +243,8 @@ Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath) {
 			chapterList[i].path = strdup(path);
 			chapterList[i].name = removeFileExtension(entry->d_name);
 			chapterList[i].isListenedTo = false;
-			if(chapterList[i].path == NULL){
+			chapterList[i].pos = extractChapterPos(chapterList[i].name);
+			if(chapterList[i].path == NULL || chapterList[i].name == NULL){
 				perror("strdup");
 				for(int j=0; j<i; j++){
 					free(chapterList[j].name);
@@ -265,4 +295,44 @@ char *removeFileExtension(const char *filename){
 	new_filename[length] = '\0';
 
 	return new_filename;
+}
+
+int extractChapterPos(const char *chapterName){
+	int number = 0;
+	int found = 0;
+	const char *ptr = chapterName;
+
+	while(*ptr){
+		if(isdigit(*ptr)){
+			number = number * 10 + (*ptr - '0');
+			found = 1;
+		} else if (found){
+			break;
+		}
+		ptr++;
+	}
+	return found ? number : -1;
+}
+
+void sortChapters(Chapter *chapters, size_t len){
+	// TODO: Maybe add support for epilogue and preface in the future.
+	size_t i, j;
+	int swapped;
+	Chapter temp;
+
+	for(i = 0; i < len - 1; i++){
+		swapped = 0;
+		for(j = 0; j < len - i - 1; j++){
+			if(chapters[j].pos > chapters[j + 1].pos){
+				temp = chapters[j];
+				chapters[j] = chapters[j + 1];
+				chapters[j + 1] = temp;
+				swapped = 1;
+			}	
+		}
+
+		if(swapped == 0) {
+			break;
+		}
+	}
 }
