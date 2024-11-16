@@ -1,4 +1,1 @@
-__pycache__/
-*.pyc
-cover.jpg
-test_dir/
+.vscode
