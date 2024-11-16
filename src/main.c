@@ -169,7 +169,6 @@ int main()
 				chapters = getChapterList(selectedDir, &chaptersLen, folderPath);			
 				sortChapters(chapters, chaptersLen);
 				names = getChapterNames(chapters, chaptersLen);
-
 				activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
 
 				// Try to load the cover image
