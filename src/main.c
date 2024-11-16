@@ -12,7 +12,6 @@
 #define WIDTH (1024)
 #define HEIGHT (768)
 
-<<<<<<< HEAD
 typedef struct Chapter{
 	char* name;
 	char* path;
@@ -25,9 +24,6 @@ char *removeFileExtension(const char *filename);
 const char **getChapterNames(Chapter *chapters, size_t len);
 int extractChapterPos(const char *chapterName);
 void sortChapters(Chapter *chapters, size_t len);
-=======
-char** getChapterList(DIR *dir, int *len);
->>>>>>> dev
 
 int main()
 {
@@ -37,11 +33,7 @@ int main()
 	SetTargetFPS(60);
 	GuiLoadStyle("themes/style_dark.rgs");
 			
-<<<<<<< HEAD
 	size_t i; // Iterator
-=======
-	int i; // Iterator
->>>>>>> dev
 
 	/* ---- Sizes START ----*/
 
@@ -121,21 +113,14 @@ int main()
 	bool openButtonClicked = false;
 
 	const char *folderPath;
-<<<<<<< HEAD
 	Chapter *chapters;
 	Chapter currentChapter;
 	const char **names;
 	size_t chaptersLen = 0;
-=======
-	char **chapterList;
-	unsigned int numberOfChapters = 0;
->>>>>>> dev
 	Image cover;
 	Texture coverTexture;
 	DIR *selectedDir;
 	int listViewRes;
-
-	DIR *selectedDir;
 
 	while (!WindowShouldClose())
 	{ 
@@ -170,25 +155,12 @@ int main()
 
 		// Open Button
 		if(GuiButton(OPEN_BUTTON_REC, GuiIconText(3, NULL))) {
-<<<<<<< HEAD
 			chaptersLen = 0;
-=======
-			numberOfChapters = 0;
->>>>>>> dev
 			folderPath = tinyfd_selectFolderDialog(
 				"Select Folder",
 				GetWorkingDirectory()
 			);
 			
-			selectedDir = opendir(folderPath);
-			if(selectedDir == NULL){
-				perror("Failed to open folder");
-				return EXIT_FAILURE;
-			}
-
-			chapterList = getChapterList(selectedDir, &numberOfChapters);			
-
-<<<<<<< HEAD
 			// Check if the folder was selected 
 			if(folderPath != NULL){
 				selectedDir = opendir(folderPath);
@@ -206,21 +178,13 @@ int main()
 				names = getChapterNames(chapters, chaptersLen);
 				activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
 
-=======
-			// Check if there is cover.png and if it exists 
-			// load it.	
-			if(folderPath){
->>>>>>> dev
 				cover = LoadImage(TextFormat("%s/%s", folderPath, "cover.png"));
 				if(IsImageValid(cover)){
 					coverTexture = LoadTextureFromImage(cover);	
 					UnloadImage(cover);
 					DrawTexture(coverTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
-<<<<<<< HEAD
 				} else {
 					printf("Cover image not found\n");
-=======
->>>>>>> dev
 				}
 			} else {
 				printf("Folder not selected\n");
@@ -228,16 +192,11 @@ int main()
 		}
 
 		/* -------------------------------------- */
-<<<<<<< HEAD
 		
-=======
-
->>>>>>> dev
 		EndDrawing();
 	}
 
 	// Free Memory
-<<<<<<< HEAD
 	if(chaptersLen > 0){
 		printf("it is not null\n");
 		for(i = 0; i <chaptersLen; i++){
@@ -266,37 +225,20 @@ int main()
 	}
 
 	UnloadTexture(coverTexture);
-=======
-	if(numberOfChapters > 0){
-		printf("it is not null");
-		for(i = 0; i<numberOfChapters; i++){
-			free(chapterList[i]);
-		}
-		free(chapterList);
-	}
->>>>>>> dev
 	CloseWindow();
 	return EXIT_SUCCESS;
 }
 
-<<<<<<< HEAD
 Chapter *getChapterList(DIR *dir, size_t *len, const char *dirPath) {
 	Chapter *chapterList = malloc(500 * sizeof(Chapter));
 	struct dirent *entry;
 	const char *path;
 	size_t i = 0;
-=======
-char** getChapterList(DIR *dir, int *len) {
-	char **chapterList = malloc(500 * sizeof(char*));
-	struct dirent *entry;
-	int i = 0;
->>>>>>> dev
 
 	while((entry = readdir(dir)) != NULL){
 		if(entry->d_name[0] == '.')
 			continue;
 		if(IsFileExtension(entry->d_name, ".mp3")){
-<<<<<<< HEAD
 			path = TextFormat("%s/%s", dirPath, entry->d_name);
 			chapterList[i].path = strdup(path);
 			chapterList[i].name = removeFileExtension(entry->d_name);
@@ -307,13 +249,6 @@ char** getChapterList(DIR *dir, int *len) {
 				for(int j=0; j<i; j++){
 					free(chapterList[j].name);
 					free(chapterList[j].path);
-=======
-			chapterList[i] = strdup(entry->d_name);
-			if(chapterList[i] == NULL){
-				perror("strdup");
-				for(int j=0; j<i; j++){
-					free(chapterList[j]);
->>>>>>> dev
 				}
 				free(chapterList);
 				return NULL;
@@ -325,7 +260,6 @@ char** getChapterList(DIR *dir, int *len) {
 
 	closedir(dir);
 	return chapterList;
-<<<<<<< HEAD
 }
 
 const char **getChapterNames(Chapter *chapters, size_t len){
@@ -401,6 +335,4 @@ void sortChapters(Chapter *chapters, size_t len){
 			break;
 		}
 	}
-=======
->>>>>>> dev
 }
