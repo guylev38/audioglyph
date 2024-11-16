@@ -2,6 +2,12 @@
 #include <string.h>
 #include <stdio.h>
 
+/* 
+* char *removeFileExtension(const char *filename)
+* Removes the file extension from a given file name 
+* and returns the name.
+*/
+
 char *removeFileExtension(const char *filename){
 	const char *dot = strrchr(filename, '.');
 
