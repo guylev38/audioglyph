@@ -1,3 +1,4 @@
+
 #include <dirent.h>
 #include <string.h>
 #include <ctype.h>
@@ -107,19 +108,19 @@ const char **getChapterNames(Chapter *chapters, size_t len){
 */ 
 int extractChapterPos(const char *chapterName){
 	int number = 0;
+	int found = 0;
 	const char *ptr = chapterName;
 
-	while(*ptr && isdigit(*ptr) == false){
+	while(*ptr){
+		if(isdigit(*ptr)){
+			number = number * 10 + (*ptr - '0');
+			found = 1;
+		} else if (found){
+			break;
+		}
 		ptr++;
 	}
-
-	while(*ptr && isdigit(*ptr) == true){
-		number = number * 10 + (*ptr - '0');
-		ptr++;
-	}
-
-	// If digits were found, return the number; otherwise return -1
-	return (number > 0) ? number : -1;
+	return found ? number : -1;
 }
 
 // Helper for sortChapters
