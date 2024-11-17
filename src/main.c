@@ -112,6 +112,13 @@ int main()
 	const int CHAPTER_BUTTON_X = (WIDTH - CHAPTERS_PANEL_WIDTH);
 	const int CHAPTER_BUTTON_Y = (TOP_MENU_HEIGHT + 5);
 
+	// Now Playing Label
+	const int NOW_PLAYING_LABEL_WIDTH = (TOP_MENU_WIDTH - OPEN_BUTTON_WIDTH);
+	const int NOW_PLAYING_LABEL_HEIGHT = 25;
+	const int NOW_PLAYING_LABEL_X = (OPEN_BUTTON_WIDTH + 20);
+	const int NOW_PLAYING_LABEL_Y = OPEN_BUTTON_Y;
+	const Rectangle NOW_PLAYING_LABEL_REC = { NOW_PLAYING_LABEL_X, NOW_PLAYING_LABEL_Y, NOW_PLAYING_LABEL_WIDTH, NOW_PLAYING_LABEL_HEIGHT };
+
 	/* ---- Sizes END ----*/ 
 
 	size_t i; // Iterator
@@ -132,6 +139,7 @@ int main()
 	int minutesLength, secondsLength;
 	char *elapsedTimeBuffer = malloc(5 * sizeof(char));
 	char *trackLengthBuffer = malloc(5 * sizeof(char));
+	char *nowPlayingBuffer = malloc(100 * sizeof(char));
 
 	while (!WindowShouldClose())
 	{ 
@@ -143,6 +151,7 @@ int main()
 			trackLength = GetMusicTimeLength(bookTrack);
 			formatTimeElapsed(elapsedTimeBuffer, timePlayed);
 			formatTrackLength(trackLengthBuffer, trackLength);
+			sprintf(nowPlayingBuffer, "Now Playing: %s", currentChapter.name);
 		}
 
 		BeginDrawing();
@@ -151,6 +160,7 @@ int main()
 		
 		// Top Menu Panel	
 		GuiPanel(TOP_MENU_REC, NULL); 
+		GuiLabel(NOW_PLAYING_LABEL_REC, nowPlayingBuffer);
 
 		// Chapters Panel
 		GuiPanel(CHAPTERS_PANEL_REC, "Chapters"); 
@@ -271,6 +281,7 @@ int main()
 
 	free(elapsedTimeBuffer);
 	free(trackLengthBuffer);
+	free(nowPlayingBuffer);
 
 	UnloadTexture(coverTexture);
 	UnloadFont(font);
