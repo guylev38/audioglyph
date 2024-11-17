@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "utils.h"
 
 /* 
 * char *removeFileExtension(const char *filename)
@@ -28,3 +29,15 @@ char *removeFileExtension(const char *filename){
 
 	return new_filename;
 }
+
+void formatTimeElapsed(char *buffer, float timePlayed){
+	int minutesElapsed = (int)(timePlayed / 60);
+	int secondsElapsed = (int)(timePlayed) % 60;
+	sprintf(buffer, "%d:%02d", minutesElapsed, secondsElapsed);
+}
+void formatTrackLength(char *buffer, float trackLength){
+	int minutesLength = (int)(trackLength / 60);
+	int secondsLength = (int)(trackLength) % 60;
+	sprintf(buffer, "%d:%02d", minutesLength, secondsLength);
+}
+

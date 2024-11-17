@@ -15,13 +15,14 @@
 
 #define WIDTH (1024)
 #define HEIGHT (768)
+#define AUDIO_STREAM_BUFFER_SIZE (4096)
 
 int main()
 {
 	InitWindow(WIDTH, HEIGHT, "Audioglyph");
 	SetExitKey(KEY_ESCAPE);
 	SetTargetFPS(60);
-	SetAudioStreamBufferSizeDefault(512);
+	SetAudioStreamBufferSizeDefault(AUDIO_STREAM_BUFFER_SIZE);
 	InitAudioDevice();
 
 	GuiLoadStyle("themes/style_dark.rgs"); // Set dark theme
@@ -126,18 +127,28 @@ int main()
 	Music bookTrack = { 0 }; 
 	bool isMusicLoaded = false;
 	float timePlayed = 0.0f;
+	float trackLength = 0.0f;
+	int minutesElapsed, secondsElapsed;
+	int minutesLength, secondsLength;
+	char *elapsedTimeBuffer = malloc(5 * sizeof(char));
+	char *trackLengthBuffer = malloc(5 * sizeof(char));
 
 	while (!WindowShouldClose())
 	{ 
 
 		if(isMusicLoaded && IsMusicStreamPlaying(bookTrack)){
+			progress = GetMusicTimePlayed(bookTrack) / GetMusicTimeLength(bookTrack);
 			UpdateMusicStream(bookTrack);
+			timePlayed = GetMusicTimePlayed(bookTrack);
+			trackLength = GetMusicTimeLength(bookTrack);
+			formatTimeElapsed(elapsedTimeBuffer, timePlayed);
+			formatTrackLength(trackLengthBuffer, trackLength);
 		}
 
 		BeginDrawing();
 
 		GuiSetFont(font);
-
+		
 		// Top Menu Panel	
 		GuiPanel(TOP_MENU_REC, NULL); 
 
@@ -150,15 +161,14 @@ int main()
 		// Play Button
 		isPlayButtonClicked = GuiButton(PLAY_BUTTON_REC, GuiIconText(131, NULL));
 		if(isPlayButtonClicked && IsMusicValid(bookTrack)){
-			printf("Playing book track...\n");
-			if(timePlayed > 0.0f){
-				PlayMusicStream(bookTrack);
-				SeekMusicStream(bookTrack, timePlayed);
-			} else {
-				PlayMusicStream(bookTrack);
+			if(IsMusicStreamPlaying(bookTrack)){
+				printf("Book track already playing!\n");
 			}
-
-			
+			printf("Playing book track...\n");
+			PlayMusicStream(bookTrack);
+			if(timePlayed > 0.0f){
+				SeekMusicStream(bookTrack, timePlayed);
+			}
 		}
 
 		// Pause Button
@@ -175,10 +185,14 @@ int main()
 			printf("Stopping book track...\n");
 			StopMusicStream(bookTrack);
 			timePlayed = 0.0f;
+			trackLength = 0.0f;
+			progress = 0;
+			formatTimeElapsed(elapsedTimeBuffer, timePlayed);
+			formatTrackLength(trackLengthBuffer, trackLength);
 		}
 
 		// Progress Bar
-		GuiProgressBar(PROG_BAR_REC, "0:00", "1:00", &progress, 0.0f, 1.0f);
+		GuiProgressBar(PROG_BAR_REC, elapsedTimeBuffer, trackLengthBuffer, &progress, 0.0f, 1.0f);
 
 		// If the list view was initialized then update the current chapter.
 		if(folderPath != NULL){
@@ -190,6 +204,10 @@ int main()
 				}
 				bookTrack = LoadMusicStream(currentChapter.path);
 				isMusicLoaded = IsMusicValid(bookTrack);
+				trackLength = GetMusicTimePlayed(bookTrack);
+				progress = 0.0f;
+				formatTimeElapsed(elapsedTimeBuffer, timePlayed);
+				formatTrackLength(trackLengthBuffer, trackLength);
 			}
 		}	
 
@@ -250,6 +268,9 @@ int main()
 	if(isMusicLoaded){
 		UnloadMusicStream(bookTrack);
 	}
+
+	free(elapsedTimeBuffer);
+	free(trackLengthBuffer);
 
 	UnloadTexture(coverTexture);
 	UnloadFont(font);
