@@ -21,7 +21,15 @@ int main()
 	InitWindow(WIDTH, HEIGHT, "Audioglyph");
 	SetExitKey(KEY_ESCAPE);
 	SetTargetFPS(60);
+
 	GuiLoadStyle("themes/style_dark.rgs"); // Set dark theme
+	Font font = LoadFontEx("resources/UbuntuMono.ttf", 32, NULL, 0);	
+	if(font.texture.id == 0){
+		fprintf(stderr, "Failed to load font!\n");
+		CloseWindow();
+		return EXIT_FAILURE;
+	}
+
 
 	/* ---- Sizes START ----*/
 
@@ -115,6 +123,8 @@ int main()
 	{ 
 		BeginDrawing();
 
+		GuiSetFont(font);
+
 		// Top Menu Panel	
 		GuiPanel(TOP_MENU_REC, NULL); 
 
@@ -196,6 +206,7 @@ int main()
 	}
 
 	UnloadTexture(coverTexture);
+	UnloadFont(font);
 	CloseWindow(); // Close the window.
 	return EXIT_SUCCESS;
 }
