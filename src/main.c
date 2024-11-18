@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "raylib.h"
 
@@ -125,6 +126,7 @@ int main()
 
 	const char *folderPath;
 	const char **names;
+	char *cover_path;
 	DIR *selectedDir;
 	Chapter *chapters;
 	size_t chaptersLen = 0;
@@ -140,10 +142,12 @@ int main()
 	char *elapsedTimeBuffer = malloc(5 * sizeof(char));
 	char *trackLengthBuffer = malloc(5 * sizeof(char));
 	char *nowPlayingBuffer = malloc(100 * sizeof(char));
+	elapsedTimeBuffer[0] = '\0';
+	trackLengthBuffer[0] = '\0';
+	nowPlayingBuffer[0] = '\0';
 
 	while (!WindowShouldClose())
 	{ 
-
 		if(isMusicLoaded && IsMusicStreamPlaying(bookTrack)){
 			progress = GetMusicTimePlayed(bookTrack) / GetMusicTimeLength(bookTrack);
 			UpdateMusicStream(bookTrack);
@@ -154,13 +158,24 @@ int main()
 			sprintf(nowPlayingBuffer, "Now Playing: %s", currentChapter.name);
 		}
 
+		if(isMusicLoaded == false){
+			formatTimeElapsed(elapsedTimeBuffer, timePlayed);
+			formatTrackLength(trackLengthBuffer, trackLength);
+		}
+
 		BeginDrawing();
 
 		GuiSetFont(font);
 		
 		// Top Menu Panel	
 		GuiPanel(TOP_MENU_REC, NULL); 
-		GuiLabel(NOW_PLAYING_LABEL_REC, nowPlayingBuffer);
+
+		// If the buffer is empty label should be only "Now Playing:"
+		if(strlen(nowPlayingBuffer) <= 0){
+			GuiLabel(NOW_PLAYING_LABEL_REC, "Now Playing: ");
+		} else {
+			GuiLabel(NOW_PLAYING_LABEL_REC, nowPlayingBuffer);
+		}
 
 		// Chapters Panel
 		GuiPanel(CHAPTERS_PANEL_REC, "Chapters"); 
@@ -194,11 +209,14 @@ int main()
 		if(isStopButtonClicked && IsMusicValid(bookTrack)){
 			printf("Stopping book track...\n");
 			StopMusicStream(bookTrack);
+			UnloadMusicStream(bookTrack);
+			bookTrack = (Music){ 0 };
 			timePlayed = 0.0f;
 			trackLength = 0.0f;
 			progress = 0;
 			formatTimeElapsed(elapsedTimeBuffer, timePlayed);
 			formatTrackLength(trackLengthBuffer, trackLength);
+			nowPlayingBuffer[0] = '\0';
 		}
 
 		// Progress Bar
@@ -216,6 +234,7 @@ int main()
 				isMusicLoaded = IsMusicValid(bookTrack);
 				trackLength = GetMusicTimePlayed(bookTrack);
 				progress = 0.0f;
+				timePlayed = 0.0f;
 				formatTimeElapsed(elapsedTimeBuffer, timePlayed);
 				formatTrackLength(trackLengthBuffer, trackLength);
 			}
@@ -250,9 +269,15 @@ int main()
 				sortChapters(chapters, chaptersLen);
 				names = getChapterNames(chapters, chaptersLen);
 				activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
-
 				// Try to load the cover image
-				cover = LoadImage(TextFormat("%s/%s", folderPath, "cover.png"));
+				cover_path = getCoverFileName(folderPath);
+				if(cover_path != NULL){
+					cover = LoadImage(cover_path);
+					int coverHeight = (HEIGHT - TOP_MENU_HEIGHT -  CONTROLS_PANEL_HEIGHT);
+					int coverWidth = (WIDTH - CHAPTERS_PANEL_WIDTH);
+					ImageResize(&cover, coverWidth, coverHeight);
+				}
+
 				if(IsImageValid(cover)){
 					coverTexture = LoadTextureFromImage(cover);	
 					UnloadImage(cover);
