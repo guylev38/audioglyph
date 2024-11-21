@@ -291,6 +291,7 @@ void HandleButtons(AppState *state){
 		LoadCover(state);
 	}
 }
+
 void LoadChapters(AppState *state){
 	char *prevFolderPath = state->folderPath;
 	// Open folder dialog
