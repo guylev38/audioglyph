@@ -1,5 +1,7 @@
 # AudioGlyph
-Simple Audiobook GUI made with C and raylib/raygui.
+<img src="resources/logo.png"></img>  
+
+Simple Audiobook GUI made with C and raylib/raygui.  
 Currently only supported in Linux.
 
 ## Vision
