@@ -139,6 +139,9 @@ const static int NOW_PLAYING_LABEL_X = (OPEN_BUTTON_WIDTH + 20);
 const static int NOW_PLAYING_LABEL_Y = OPEN_BUTTON_Y;
 const static Rectangle NOW_PLAYING_LABEL_REC = { NOW_PLAYING_LABEL_X, NOW_PLAYING_LABEL_Y, NOW_PLAYING_LABEL_WIDTH, NOW_PLAYING_LABEL_HEIGHT };
 
+// Cover 
+const static int COVER_HEIGHT = (HEIGHT - TOP_MENU_HEIGHT -  CONTROLS_PANEL_HEIGHT);
+const static int COVER_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH);
 /* ----------------------------------- */
 
 int main()
@@ -326,26 +329,33 @@ void LoadChapters(AppState *state){
 }
 
 void LoadCover(AppState *state){
-	int coverHeight = (HEIGHT - TOP_MENU_HEIGHT -  CONTROLS_PANEL_HEIGHT);
-	int coverWidth = (WIDTH - CHAPTERS_PANEL_WIDTH);
 	if(state->folderPath == NULL) return;
+
 	// Try to load the cover image
 	char *cover_path = getCoverFileName(state->folderPath);
 	if(cover_path != NULL){
 		state->cover = LoadImage(cover_path);
-		ImageResize(&state->cover, coverWidth, coverHeight);
+		ImageResize(&state->cover, COVER_WIDTH, COVER_HEIGHT);
 		if(IsImageValid(state->cover)){
+			if(state->coverTexture.id > 0) {
+				UnloadTexture(state->coverTexture);
+			}
 			state->coverTexture = LoadTextureFromImage(state->cover);	
 			UnloadImage(state->cover);
 			DrawTexture(state->coverTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
 		}
 	} else {
-		printf("Cover not found");
+		printf("Cover not found\n");
+		if(state->defaultTexture.id > 0){
+			UnloadTexture(state->defaultTexture);
+		}
+		if(IsImageValid(state->logo)){
+			state->logo = LoadImage("resources/logo.png");
+		}
 		Image defaultCover = state->logo;
-		ImageResize(&defaultCover, coverWidth, coverHeight);
+		ImageResize(&defaultCover, COVER_WIDTH, COVER_HEIGHT);
 		state->defaultTexture = LoadTextureFromImage(defaultCover);
 		DrawTexture(state->defaultTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
-		UnloadTexture(state->coverTexture);
 	}
 }
 
@@ -367,17 +377,15 @@ void UpdateMusic(AppState *state){
 }
 
 void Cleanup(AppState *state){
-	if(state->chaptersLen > 0){
-		freeChapterMemory(state->chapters, state->names, state->chaptersLen);
-	}
+	if(state->chaptersLen > 0) freeChapterMemory(state->chapters, state->names, state->chaptersLen);
 
-	if(state->isTrackLoaded){
-		UnloadMusicStream(state->bookTrack);
-	}
+	if(state->isTrackLoaded) UnloadMusicStream(state->bookTrack);
 
-	free(state->elapsedTimeBuffer);
-	free(state->trackLengthBuffer);
-	free(state->nowPlayingBuffer);
+	if(state->elapsedTimeBuffer != NULL) free(state->elapsedTimeBuffer);
+
+	if(state->trackLengthBuffer != NULL) free(state->trackLengthBuffer);
+
+	if(state->nowPlayingBuffer != NULL) (state->nowPlayingBuffer);
 
 	UnloadTexture(state->coverTexture);
 	UnloadTexture(state->defaultTexture);
