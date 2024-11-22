@@ -49,12 +49,12 @@ char *getCoverFileName(const char *dirPath){
 	}
 }
 
-
 void formatTimeElapsed(char *buffer, float timePlayed){
 	int minutesElapsed = (int)(timePlayed / 60);
 	int secondsElapsed = (int)(timePlayed) % 60;
 	sprintf(buffer, "%d:%02d", minutesElapsed, secondsElapsed);
 }
+
 void formatTrackLength(char *buffer, float trackLength){
 	int minutesLength = (int)(trackLength / 60);
 	int secondsLength = (int)(trackLength) % 60;
