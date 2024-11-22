@@ -18,8 +18,153 @@
 #define HEIGHT (768)
 #define AUDIO_STREAM_BUFFER_SIZE (4096)
 
+typedef struct {
+	Font font;
+	const char *folderPath;
+	const char **names;
+	DIR *selectedDir;
+	Chapter *chapters;
+	Chapter currentChapter;
+	size_t chaptersLen;
+	Image cover;
+	Image logo;
+	Texture2D defaultTexture;
+	Texture coverTexture;
+	float progress;
+	int scrollIndex;
+	int activeItem;
+	int focus;
+	Music bookTrack;
+	float timePlayed;
+	float trackLength;
+	char *elapsedTimeBuffer;
+	char *trackLengthBuffer;
+	char *nowPlayingBuffer;
+	int openButtonState;
+	int playButtonState;
+	int pauseButtonState;
+	int stopButtonState;
+	int minutesElapsed, secondsElapsed;
+	int minutesLength, secondsLength;
+	bool isTrackLoaded;
+} AppState;
+
+/* ----- Function Prototypes ----- */
+
+void InitApp(AppState *state);
+void DrawUI(AppState *state);
+void LoadChapters(AppState *state);
+void LoadCover(AppState *state);
+void HandleButtons(AppState *state);
+void UpdateMusic(AppState *state);
+void Cleanup(AppState *state);
+
+/* ------------------------------- */
+
+/* ----- Global Static Variables ----- */
+
+// Chapters Panel
+const static int CHAPTERS_PANEL_WIDTH = 250;
+const static int CHAPTERS_PANEL_HEIGHT = HEIGHT;
+const static int CHAPTERS_PANEL_X = (WIDTH - CHAPTERS_PANEL_WIDTH);
+const static int CHAPTERS_PANEL_Y = 0;	
+const static Rectangle CHAPTERS_PANEL_REC = {CHAPTERS_PANEL_X, CHAPTERS_PANEL_Y, CHAPTERS_PANEL_WIDTH, CHAPTERS_PANEL_HEIGHT};
+
+// Top Menu
+const static int TOP_MENU_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH); 
+const static int TOP_MENU_HEIGHT = 35;
+const static int TOP_MENU_X = 0;
+const static int TOP_MENU_Y = 0;
+const static Rectangle TOP_MENU_REC = {TOP_MENU_X, TOP_MENU_Y, TOP_MENU_WIDTH, TOP_MENU_HEIGHT};
+
+// Chapters List View
+const static int CHAPTERS_LIST_VIEW_WIDTH = CHAPTERS_PANEL_WIDTH;
+const static int CHAPTERS_LIST_VIEW_HEIGHT = (HEIGHT - TOP_MENU_HEIGHT + 12);
+const static int CHAPTERS_LIST_VIEW_X = CHAPTERS_PANEL_X;
+const static int CHAPTERS_LIST_VIEW_Y = CHAPTERS_PANEL_Y + (TOP_MENU_HEIGHT - 12);
+const static Rectangle CHAPTERS_LIST_VIEW_REC = { CHAPTERS_LIST_VIEW_X, CHAPTERS_LIST_VIEW_Y, CHAPTERS_LIST_VIEW_WIDTH, CHAPTERS_LIST_VIEW_HEIGHT };
+
+// Controls Panel
+const static int CONTROLS_PANEL_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH);
+const static int CONTROLS_PANEL_HEIGHT = 100;
+const static int CONTROLS_PANEL_X = 0;
+const static int CONTROLS_PANEL_Y = (HEIGHT - CONTROLS_PANEL_HEIGHT);
+const static Rectangle CONTROLS_PANEL_REC = { CONTROLS_PANEL_X, CONTROLS_PANEL_Y, CONTROLS_PANEL_WIDTH, CONTROLS_PANEL_HEIGHT };
+
+// Open Button
+const static int OPEN_BUTTON_WIDTH = 50;
+const static int OPEN_BUTTON_HEIGHT = 25;
+const static int OPEN_BUTTON_X = TOP_MENU_X + 5;
+const static int OPEN_BUTTON_Y = TOP_MENU_Y + 5;
+const static Rectangle OPEN_BUTTON_REC = { OPEN_BUTTON_X, OPEN_BUTTON_Y, OPEN_BUTTON_WIDTH, OPEN_BUTTON_HEIGHT };
+
+// Play Button
+const static int PLAY_BUTTON_WIDTH = 25;
+const static int PLAY_BUTTON_HEIGHT = 25;
+const static int PLAY_BUTTON_X = CONTROLS_PANEL_X + 20;
+const static int PLAY_BUTTON_Y = HEIGHT - (CONTROLS_PANEL_HEIGHT / 2);
+const static Rectangle PLAY_BUTTON_REC = { PLAY_BUTTON_X, PLAY_BUTTON_Y, PLAY_BUTTON_WIDTH, PLAY_BUTTON_HEIGHT};
+
+// Pause Button
+const static int PAUSE_BUTTON_WIDTH = 25;
+const static int PAUSE_BUTTON_HEIGHT = 25;
+const static int PAUSE_BUTTON_X = PLAY_BUTTON_X + 30;
+const static int PAUSE_BUTTON_Y = PLAY_BUTTON_Y;
+const static Rectangle PAUSE_BUTTON_REC = { PAUSE_BUTTON_X, PAUSE_BUTTON_Y, PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT};
+
+// Stop Button
+const static int STOP_BUTTON_WIDTH = 25;
+const static int STOP_BUTTON_HEIGHT = 25;
+const static int STOP_BUTTON_X = PAUSE_BUTTON_X + 30;
+const static int STOP_BUTTON_Y = PLAY_BUTTON_Y;
+const static Rectangle STOP_BUTTON_REC = { STOP_BUTTON_X, STOP_BUTTON_Y, STOP_BUTTON_WIDTH, STOP_BUTTON_HEIGHT };
+
+// Progress Bar
+const static int PROG_BAR_WIDTH = (CHAPTERS_PANEL_WIDTH - STOP_BUTTON_WIDTH) * 2;
+const static int PROG_BAR_HEIGHT = 30;
+const static int PROG_BAR_X = STOP_BUTTON_X + 100;
+const static int PROG_BAR_Y = PLAY_BUTTON_Y - 3;
+const static Rectangle PROG_BAR_REC = { PROG_BAR_X, PROG_BAR_Y, PROG_BAR_WIDTH, PROG_BAR_HEIGHT };
+
+// Chapter Buttons in list view.
+const static int CHAPTER_BUTTON_WIDTH = 125;
+const static int CHAPTER_BUTTON_HEIGHT = 50;
+const static int CHAPTER_BUTTON_X = (WIDTH - CHAPTERS_PANEL_WIDTH);
+const static int CHAPTER_BUTTON_Y = (TOP_MENU_HEIGHT + 5);
+
+// Now Playing Label
+const static int NOW_PLAYING_LABEL_WIDTH = (TOP_MENU_WIDTH - OPEN_BUTTON_WIDTH);
+const static int NOW_PLAYING_LABEL_HEIGHT = 25;
+const static int NOW_PLAYING_LABEL_X = (OPEN_BUTTON_WIDTH + 20);
+const static int NOW_PLAYING_LABEL_Y = OPEN_BUTTON_Y;
+const static Rectangle NOW_PLAYING_LABEL_REC = { NOW_PLAYING_LABEL_X, NOW_PLAYING_LABEL_Y, NOW_PLAYING_LABEL_WIDTH, NOW_PLAYING_LABEL_HEIGHT };
+
+// Cover 
+const static int COVER_HEIGHT = (HEIGHT - TOP_MENU_HEIGHT -  CONTROLS_PANEL_HEIGHT);
+const static int COVER_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH);
+/* ----------------------------------- */
+
 int main()
 {
+	AppState state = {0};
+	InitApp(&state);
+
+	while (!WindowShouldClose())
+	{
+		UpdateMusic(&state); 
+		BeginDrawing();
+		DrawUI(&state);
+		HandleButtons(&state);
+		EndDrawing();
+	}
+
+	Cleanup(&state);
+	CloseWindow(); // Close the window.
+	return EXIT_SUCCESS;
+}
+
+void InitApp(AppState *state){
+	// Init the window and the audio device.
 	InitWindow(WIDTH, HEIGHT, "Audioglyph");
 	SetExitKey(KEY_ESCAPE);
 	SetTargetFPS(60);
@@ -27,290 +172,230 @@ int main()
 	InitAudioDevice();
 
 	GuiLoadStyle("themes/style_dark.rgs"); // Set dark theme
-	Font font = LoadFontEx("resources/UbuntuMono.ttf", 32, NULL, 0);	
-	if(font.texture.id == 0){
+
+	// Load the font
+	state->font = LoadFontEx("resources/UbuntuMono.ttf", 32, NULL, 0);	
+	if(state->font.texture.id == 0){
 		fprintf(stderr, "Failed to load font!\n");
 		CloseWindow();
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);	
+	}
+	// Load the logo
+	state->logo = LoadImage("resources/logo.png");
+	state->defaultTexture = LoadTextureFromImage(state->logo);	
+	SetWindowIcon(state->logo);
+
+	// Allocate memory for buffers
+	state->elapsedTimeBuffer = malloc(50 * sizeof(char));
+	state->trackLengthBuffer = malloc(50 * sizeof(char));
+	state->nowPlayingBuffer = malloc(50 * sizeof(char));
+	if(state->elapsedTimeBuffer == NULL || state->trackLengthBuffer == NULL || state->nowPlayingBuffer == NULL){
+		fprintf(stderr, "Failed to allocate memory for buffers");
+		Cleanup(state);
+		CloseWindow();
+		exit(EXIT_FAILURE);
 	}
 
+	// Init variables
+	state->elapsedTimeBuffer[0] = '\0';
+	state->trackLengthBuffer[0] = '\0';
+	state->nowPlayingBuffer[0] = '\0';
 
-	/* ---- Sizes START ----*/
+	state->progress = 0.0f;
+	state->chaptersLen = 0;
+	state->isTrackLoaded = false;
+	state->bookTrack = (Music){0};
+}
+
+void DrawUI(AppState *state){
+	GuiSetFont(state->font);
+	
+	// Top Menu Panel	
+	GuiPanel(TOP_MENU_REC, NULL); 
+
+	// If the buffer is empty label should be only "Now Playing:"
+	if(strlen(state->nowPlayingBuffer) <= 0){
+		GuiLabel(NOW_PLAYING_LABEL_REC, "Now Playing: ");
+	} else {
+		GuiLabel(NOW_PLAYING_LABEL_REC, state->nowPlayingBuffer);
+	}
 
 	// Chapters Panel
-	const int CHAPTERS_PANEL_WIDTH = 250;
-	const int CHAPTERS_PANEL_HEIGHT = HEIGHT;
-	const int CHAPTERS_PANEL_X = (WIDTH - CHAPTERS_PANEL_WIDTH);
-	const int CHAPTERS_PANEL_Y = 0;	
-	const Rectangle CHAPTERS_PANEL_REC = {CHAPTERS_PANEL_X, CHAPTERS_PANEL_Y, CHAPTERS_PANEL_WIDTH, CHAPTERS_PANEL_HEIGHT};
-
-	// Top Menu
-	const int TOP_MENU_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH); 
-	const int TOP_MENU_HEIGHT = 35;
-	const int TOP_MENU_X = 0;
-	const int TOP_MENU_Y = 0;
-	const Rectangle TOP_MENU_REC = {TOP_MENU_X, TOP_MENU_Y, TOP_MENU_WIDTH, TOP_MENU_HEIGHT};
-
-	// Chapters List View
-	const int CHAPTERS_LIST_VIEW_WIDTH = CHAPTERS_PANEL_WIDTH;
-	const int CHAPTERS_LIST_VIEW_HEIGHT = (HEIGHT - TOP_MENU_HEIGHT + 12);
-	const int CHAPTERS_LIST_VIEW_X = CHAPTERS_PANEL_X;
-	const int CHAPTERS_LIST_VIEW_Y = CHAPTERS_PANEL_Y + (TOP_MENU_HEIGHT - 12);
-	const Rectangle CHAPTERS_LIST_VIEW_REC = { CHAPTERS_LIST_VIEW_X, CHAPTERS_LIST_VIEW_Y, CHAPTERS_LIST_VIEW_WIDTH, CHAPTERS_LIST_VIEW_HEIGHT };
-	int scrollIndex = 0;
-	int activeItem = -1;
-	int focus = activeItem;
+	GuiPanel(CHAPTERS_PANEL_REC, "Chapters"); 
 
 	// Controls Panel
-	const int CONTROLS_PANEL_WIDTH = (WIDTH - CHAPTERS_PANEL_WIDTH);
-	const int CONTROLS_PANEL_HEIGHT = 100;
-	const int CONTROLS_PANEL_X = 0;
-	const int CONTROLS_PANEL_Y = (HEIGHT - CONTROLS_PANEL_HEIGHT);
-	const Rectangle CONTROLS_PANEL_REC = { CONTROLS_PANEL_X, CONTROLS_PANEL_Y, CONTROLS_PANEL_WIDTH, CONTROLS_PANEL_HEIGHT };
-
-	// Open Button
-	const int OPEN_BUTTON_WIDTH = 50;
-	const int OPEN_BUTTON_HEIGHT = 25;
-	const int OPEN_BUTTON_X = TOP_MENU_X + 5;
-	const int OPEN_BUTTON_Y = TOP_MENU_Y + 5;
-	const Rectangle OPEN_BUTTON_REC = { OPEN_BUTTON_X, OPEN_BUTTON_Y, OPEN_BUTTON_WIDTH, OPEN_BUTTON_HEIGHT };
+	GuiPanel(CONTROLS_PANEL_REC, "Controls");
 
 	// Play Button
-	const int PLAY_BUTTON_WIDTH = 25;
-	const int PLAY_BUTTON_HEIGHT = 25;
-	const int PLAY_BUTTON_X = CONTROLS_PANEL_X + 20;
-	const int PLAY_BUTTON_Y = HEIGHT - (CONTROLS_PANEL_HEIGHT / 2);
-	const Rectangle PLAY_BUTTON_REC = { PLAY_BUTTON_X, PLAY_BUTTON_Y, PLAY_BUTTON_WIDTH, PLAY_BUTTON_HEIGHT};
-	int isPlayButtonClicked;
+	state->playButtonState = GuiButton(PLAY_BUTTON_REC, GuiIconText(131, NULL));
 
 	// Pause Button
-	const int PAUSE_BUTTON_WIDTH = 25;
-	const int PAUSE_BUTTON_HEIGHT = 25;
-	const int PAUSE_BUTTON_X = PLAY_BUTTON_X + 30;
-	const int PAUSE_BUTTON_Y = PLAY_BUTTON_Y;
-	const Rectangle PAUSE_BUTTON_REC = { PAUSE_BUTTON_X, PAUSE_BUTTON_Y, PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT};
-	int isPauseButtonClicked;
+	state->pauseButtonState = GuiButton(PAUSE_BUTTON_REC, GuiIconText(132, NULL));
 
 	// Stop Button
-	const int STOP_BUTTON_WIDTH = 25;
-	const int STOP_BUTTON_HEIGHT = 25;
-	const int STOP_BUTTON_X = PAUSE_BUTTON_X + 30;
-	const int STOP_BUTTON_Y = PLAY_BUTTON_Y;
-	const Rectangle STOP_BUTTON_REC = { STOP_BUTTON_X, STOP_BUTTON_Y, STOP_BUTTON_WIDTH, STOP_BUTTON_HEIGHT};
-	int isStopButtonClicked;
+	state->stopButtonState = GuiButton(STOP_BUTTON_REC, GuiIconText(133, NULL));
+
+	// Open Button
+	state->openButtonState = GuiButton(OPEN_BUTTON_REC, GuiIconText(3, NULL));
 
 	// Progress Bar
-	const int PROG_BAR_WIDTH = (CHAPTERS_PANEL_WIDTH - STOP_BUTTON_WIDTH) * 2;
-	const int PROG_BAR_HEIGHT = 30;
-	const int PROG_BAR_X = STOP_BUTTON_X + 100;
-	const int PROG_BAR_Y = PLAY_BUTTON_Y - 3;
-	const Rectangle PROG_BAR_REC = { PROG_BAR_X, PROG_BAR_Y, PROG_BAR_WIDTH, PROG_BAR_HEIGHT };
-	float progress = 0.0f;
+	GuiProgressBar(PROG_BAR_REC, state->elapsedTimeBuffer, state->trackLengthBuffer, &state->progress, 0.0f, 1.0f);
 
-	// Chapter Buttons in list view.
-	const int CHAPTER_BUTTON_WIDTH = 125;
-	const int CHAPTER_BUTTON_HEIGHT = 50;
-	const int CHAPTER_BUTTON_X = (WIDTH - CHAPTERS_PANEL_WIDTH);
-	const int CHAPTER_BUTTON_Y = (TOP_MENU_HEIGHT + 5);
-
-	// Now Playing Label
-	const int NOW_PLAYING_LABEL_WIDTH = (TOP_MENU_WIDTH - OPEN_BUTTON_WIDTH);
-	const int NOW_PLAYING_LABEL_HEIGHT = 25;
-	const int NOW_PLAYING_LABEL_X = (OPEN_BUTTON_WIDTH + 20);
-	const int NOW_PLAYING_LABEL_Y = OPEN_BUTTON_Y;
-	const Rectangle NOW_PLAYING_LABEL_REC = { NOW_PLAYING_LABEL_X, NOW_PLAYING_LABEL_Y, NOW_PLAYING_LABEL_WIDTH, NOW_PLAYING_LABEL_HEIGHT };
-
-	/* ---- Sizes END ----*/ 
-
-	size_t i; // Iterator
-
-	const char *folderPath;
-	const char **names;
-	char *cover_path;
-	DIR *selectedDir;
-	Chapter *chapters;
-	size_t chaptersLen = 0;
-	Chapter currentChapter;
-	Image cover;
-	Texture coverTexture = { 0 };
-	Music bookTrack = { 0 }; 
-	bool isMusicLoaded = false;
-	float timePlayed = 0.0f;
-	float trackLength = 0.0f;
-	int minutesElapsed, secondsElapsed;
-	int minutesLength, secondsLength;
-	char *elapsedTimeBuffer = malloc(5 * sizeof(char));
-	char *trackLengthBuffer = malloc(5 * sizeof(char));
-	char *nowPlayingBuffer = malloc(100 * sizeof(char));
-	elapsedTimeBuffer[0] = '\0';
-	trackLengthBuffer[0] = '\0';
-	nowPlayingBuffer[0] = '\0';
-
-	while (!WindowShouldClose())
-	{ 
-		if(isMusicLoaded && IsMusicStreamPlaying(bookTrack)){
-			progress = GetMusicTimePlayed(bookTrack) / GetMusicTimeLength(bookTrack);
-			UpdateMusicStream(bookTrack);
-			timePlayed = GetMusicTimePlayed(bookTrack);
-			trackLength = GetMusicTimeLength(bookTrack);
-			formatTimeElapsed(elapsedTimeBuffer, timePlayed);
-			formatTrackLength(trackLengthBuffer, trackLength);
-			sprintf(nowPlayingBuffer, "Now Playing: %s", currentChapter.name);
-		}
-
-		if(isMusicLoaded == false){
-			formatTimeElapsed(elapsedTimeBuffer, timePlayed);
-			formatTrackLength(trackLengthBuffer, trackLength);
-		}
-
-		BeginDrawing();
-
-		GuiSetFont(font);
-		
-		// Top Menu Panel	
-		GuiPanel(TOP_MENU_REC, NULL); 
-
-		// If the buffer is empty label should be only "Now Playing:"
-		if(strlen(nowPlayingBuffer) <= 0){
-			GuiLabel(NOW_PLAYING_LABEL_REC, "Now Playing: ");
-		} else {
-			GuiLabel(NOW_PLAYING_LABEL_REC, nowPlayingBuffer);
-		}
-
-		// Chapters Panel
-		GuiPanel(CHAPTERS_PANEL_REC, "Chapters"); 
-
-		// Controls Panel
-		GuiPanel(CONTROLS_PANEL_REC, "Controls");
-
-		// Play Button
-		isPlayButtonClicked = GuiButton(PLAY_BUTTON_REC, GuiIconText(131, NULL));
-		if(isPlayButtonClicked && IsMusicValid(bookTrack)){
-			if(IsMusicStreamPlaying(bookTrack)){
-				printf("Book track already playing!\n");
+	// If the list view was initialized then update the current chapter.
+	if(state->folderPath != NULL){
+		GuiListViewEx(CHAPTERS_LIST_VIEW_REC, state->names, state->chaptersLen, &state->scrollIndex, &state->activeItem, &state->focus);	
+		if(state->activeItem >= 0){
+			state->currentChapter = state->chapters[state->activeItem];
+			if(state->isTrackLoaded){
+				UnloadMusicStream(state->bookTrack);
 			}
-			printf("Playing book track...\n");
-			PlayMusicStream(bookTrack);
-			if(timePlayed > 0.0f){
-				SeekMusicStream(bookTrack, timePlayed);
-			}
+			state->bookTrack = LoadMusicStream(state->currentChapter.path);
+			state->isTrackLoaded = IsMusicValid(state->bookTrack);
+			state->trackLength = GetMusicTimePlayed(state->bookTrack);
+			state->progress = 0.0f;
+			state->timePlayed = 0.0f;
+			formatTimeElapsed(state->elapsedTimeBuffer, state->timePlayed);
+			formatTrackLength(state->trackLengthBuffer, state->trackLength);
 		}
+	}	
+}
 
-		// Pause Button
-		isPauseButtonClicked = GuiButton(PAUSE_BUTTON_REC, GuiIconText(132, NULL));
-		if(isPauseButtonClicked && IsMusicStreamPlaying(bookTrack)){
-			printf("Pausing book track...\n");
-			PauseMusicStream(bookTrack);
-			timePlayed = GetMusicTimePlayed(bookTrack);
+void HandleButtons(AppState *state){
+	if(state->playButtonState && IsMusicValid(state->bookTrack)){
+		if(IsMusicStreamPlaying(state->bookTrack)){
+			printf("Book track already playing!\n");
 		}
-
-		// Stop Button
-		isStopButtonClicked = GuiButton(STOP_BUTTON_REC, GuiIconText(133, NULL));
-		if(isStopButtonClicked && IsMusicValid(bookTrack)){
-			printf("Stopping book track...\n");
-			StopMusicStream(bookTrack);
-			UnloadMusicStream(bookTrack);
-			bookTrack = (Music){ 0 };
-			timePlayed = 0.0f;
-			trackLength = 0.0f;
-			progress = 0;
-			formatTimeElapsed(elapsedTimeBuffer, timePlayed);
-			formatTrackLength(trackLengthBuffer, trackLength);
-			nowPlayingBuffer[0] = '\0';
+		printf("Playing book track...\n");
+		if(state->timePlayed > 0.0f){
+			SeekMusicStream(state->bookTrack, state->timePlayed);
 		}
-
-		// Progress Bar
-		GuiProgressBar(PROG_BAR_REC, elapsedTimeBuffer, trackLengthBuffer, &progress, 0.0f, 1.0f);
-
-		// If the list view was initialized then update the current chapter.
-		if(folderPath != NULL){
-			GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
-			if(activeItem >= 0){
-				currentChapter = chapters[activeItem];
-				if(isMusicLoaded){
-					UnloadMusicStream(bookTrack);
-				}
-				bookTrack = LoadMusicStream(currentChapter.path);
-				isMusicLoaded = IsMusicValid(bookTrack);
-				trackLength = GetMusicTimePlayed(bookTrack);
-				progress = 0.0f;
-				timePlayed = 0.0f;
-				formatTimeElapsed(elapsedTimeBuffer, timePlayed);
-				formatTrackLength(trackLengthBuffer, trackLength);
-			}
-		}	
-
-
-		/* ----- Open Button, File Dialog and Render Chapters ----- */
-
-		// Open Button
-		if(GuiButton(OPEN_BUTTON_REC, GuiIconText(3, NULL))) {
-			chaptersLen = 0;
-			// Open folder dialog
-			folderPath = tinyfd_selectFolderDialog(
-				"Select Folder",
-				GetWorkingDirectory()
-			);
-			
-			// Check if the folder was selected 
-			if(folderPath != NULL){
-				selectedDir = opendir(folderPath);
-				if(selectedDir == NULL){
-					perror("Failed to open folder");
-					return EXIT_FAILURE;
-				}
-
-				/*
-				* Convert each file into the Chapter struct
-				* and then sort it. Afterwards get the names and 
-				* pass them to the list view.
-				*/
-				chapters = getChapterList(selectedDir, &chaptersLen, folderPath);			
-				sortChapters(chapters, chaptersLen);
-				names = getChapterNames(chapters, chaptersLen);
-				activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, names, chaptersLen, &scrollIndex, &activeItem, &focus);	
-				// Try to load the cover image
-				cover_path = getCoverFileName(folderPath);
-				if(cover_path != NULL){
-					cover = LoadImage(cover_path);
-					int coverHeight = (HEIGHT - TOP_MENU_HEIGHT -  CONTROLS_PANEL_HEIGHT);
-					int coverWidth = (WIDTH - CHAPTERS_PANEL_WIDTH);
-					ImageResize(&cover, coverWidth, coverHeight);
-				}
-
-				if(IsImageValid(cover)){
-					coverTexture = LoadTextureFromImage(cover);	
-					UnloadImage(cover);
-					DrawTexture(coverTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
-				} else {
-					printf("Cover image not found\n");
-				}
-			} else {
-				printf("Folder not selected\n");
-			}
-		}
-
-		/* -------------------------------------- */
-		
-		EndDrawing();
+		PlayMusicStream(state->bookTrack);
+	}
+	if(state->pauseButtonState && IsMusicStreamPlaying(state->bookTrack)){
+		printf("Pausing book track...\n");
+		PauseMusicStream(state->bookTrack);
+		state->timePlayed = GetMusicTimePlayed(state->bookTrack);
 	}
 
-	// Free Memory
-	if(chaptersLen > 0){
-		freeChapterMemory(chapters, names, chaptersLen);
+	if(state->stopButtonState && IsMusicValid(state->bookTrack)){
+		printf("Stopping book track...\n");
+		StopMusicStream(state->bookTrack);
+		UnloadMusicStream(state->bookTrack);
+		state->bookTrack = (Music){ 0 };
+		state->timePlayed = 0.0f;
+		state->trackLength = 0.0f;
+		state->progress = 0;
+		formatTimeElapsed(state->elapsedTimeBuffer, state->timePlayed);
+		formatTrackLength(state->trackLengthBuffer, state->trackLength);
+		state->nowPlayingBuffer[0] = '\0';
 	}
 
-	if(isMusicLoaded){
-		UnloadMusicStream(bookTrack);
+	if(state->openButtonState){
+		if(state->isTrackLoaded){
+			// stop everything before loading other chapters
+			StopMusicStream(state->bookTrack);
+			UnloadMusicStream(state->bookTrack);
+			state->bookTrack = (Music){0};
+		}
+		LoadChapters(state);
+		LoadCover(state);
+	}
+}
+
+void LoadChapters(AppState *state){
+	char *prevFolderPath = state->folderPath;
+	// Open folder dialog
+	state->folderPath = tinyfd_selectFolderDialog(
+		"Select Folder",
+		GetWorkingDirectory()
+	);
+	printf("Folder Path: %s\n", state->folderPath);
+	
+	// Check if the folder was selected 
+	if(state->folderPath != NULL){
+		state->chaptersLen = 0;
+		state->selectedDir = opendir(state->folderPath);
+		if(state->selectedDir == NULL){
+			perror("Failed to open folder");
+			exit(EXIT_FAILURE);
+		}
+
+		/*
+		* Convert each file into the Chapter struct
+		* and then sort it. Afterwards get the names and 
+		* pass them to the list view.
+		*/
+		state->chapters = getChapterList(state->selectedDir, &state->chaptersLen, state->folderPath);			
+		sortChapters(state->chapters, state->chaptersLen);
+		state->names = getChapterNames(state->chapters, state->chaptersLen);
+		state->activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, state->names, state->chaptersLen, &state->scrollIndex, &state->activeItem, &state->focus);	
+	} else {
+		state->folderPath = prevFolderPath;
+		state->activeItem = GuiListViewEx(CHAPTERS_LIST_VIEW_REC, state->names, state->chaptersLen, &state->scrollIndex, &state->activeItem, &state->focus);	
+	}
+}
+
+void LoadCover(AppState *state){
+	if(state->folderPath == NULL) return;
+
+	// Try to load the cover image
+	char *cover_path = getCoverFileName(state->folderPath);
+	if(cover_path != NULL){
+		state->cover = LoadImage(cover_path);
+		ImageResize(&state->cover, COVER_WIDTH, COVER_HEIGHT);
+		if(IsImageValid(state->cover)){
+			if(state->coverTexture.id > 0) {
+				UnloadTexture(state->coverTexture);
+			}
+			state->coverTexture = LoadTextureFromImage(state->cover);	
+			UnloadImage(state->cover);
+			DrawTexture(state->coverTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
+		}
+	} else {
+		printf("Cover not found\n");
+		if(state->defaultTexture.id > 0){
+			UnloadTexture(state->defaultTexture);
+		}
+		if(IsImageValid(state->logo)){
+			state->logo = LoadImage("resources/logo.png");
+		}
+		Image defaultCover = state->logo;
+		ImageResize(&defaultCover, COVER_WIDTH, COVER_HEIGHT);
+		state->defaultTexture = LoadTextureFromImage(defaultCover);
+		DrawTexture(state->defaultTexture, 0, (TOP_MENU_HEIGHT - TOP_MENU_Y), WHITE);
+	}
+}
+
+void UpdateMusic(AppState *state){
+	if(state->isTrackLoaded && IsMusicStreamPlaying(state->bookTrack)){
+		state->progress = GetMusicTimePlayed(state->bookTrack) / GetMusicTimeLength(state->bookTrack);
+		UpdateMusicStream(state->bookTrack);
+		state->timePlayed = GetMusicTimePlayed(state->bookTrack);
+		state->trackLength = GetMusicTimeLength(state->bookTrack);
+		formatTimeElapsed(state->elapsedTimeBuffer, state->timePlayed);
+		formatTrackLength(state->trackLengthBuffer, state->trackLength);
+		sprintf(state->nowPlayingBuffer, "Now Playing: %s", state->currentChapter.name);
 	}
 
-	free(elapsedTimeBuffer);
-	free(trackLengthBuffer);
-	free(nowPlayingBuffer);
+	if(state->isTrackLoaded == false){
+		formatTimeElapsed(state->elapsedTimeBuffer, state->timePlayed);
+		formatTrackLength(state->trackLengthBuffer, state->trackLength);
+	}
+}
 
-	UnloadTexture(coverTexture);
-	UnloadFont(font);
+void Cleanup(AppState *state){
+	if(state->chaptersLen > 0) freeChapterMemory(state->chapters, state->names, state->chaptersLen);
+
+	if(state->isTrackLoaded) UnloadMusicStream(state->bookTrack);
+
+	if(state->elapsedTimeBuffer != NULL) free(state->elapsedTimeBuffer);
+
+	if(state->trackLengthBuffer != NULL) free(state->trackLengthBuffer);
+
+	if(state->nowPlayingBuffer != NULL) (state->nowPlayingBuffer);
+
+	UnloadTexture(state->coverTexture);
+	UnloadTexture(state->defaultTexture);
+	UnloadFont(state->font);
 	CloseAudioDevice();
-	CloseWindow(); // Close the window.
-	return EXIT_SUCCESS;
 }
