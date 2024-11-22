@@ -1,5 +1,6 @@
 # AudioGlyph
 Simple Audiobook GUI made with C and raylib/raygui.
+Currently only supported in Linux.
 
 ## Vision
 Today there aren't any free and open source GUIs for managing audiobooks (i.g. Calibre for Ebooks).
