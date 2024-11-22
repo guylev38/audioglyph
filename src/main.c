@@ -164,6 +164,7 @@ int main()
 }
 
 void InitApp(AppState *state){
+	// Init the window and the audio device.
 	InitWindow(WIDTH, HEIGHT, "Audioglyph");
 	SetExitKey(KEY_ESCAPE);
 	SetTargetFPS(60);
@@ -172,17 +173,19 @@ void InitApp(AppState *state){
 
 	GuiLoadStyle("themes/style_dark.rgs"); // Set dark theme
 
+	// Load the font
 	state->font = LoadFontEx("resources/UbuntuMono.ttf", 32, NULL, 0);	
 	if(state->font.texture.id == 0){
 		fprintf(stderr, "Failed to load font!\n");
 		CloseWindow();
 		exit(EXIT_FAILURE);	
 	}
+	// Load the logo
 	state->logo = LoadImage("resources/logo.png");
 	state->defaultTexture = LoadTextureFromImage(state->logo);	
-
 	SetWindowIcon(state->logo);
 
+	// Allocate memory for buffers
 	state->elapsedTimeBuffer = malloc(50 * sizeof(char));
 	state->trackLengthBuffer = malloc(50 * sizeof(char));
 	state->nowPlayingBuffer = malloc(50 * sizeof(char));
@@ -193,6 +196,7 @@ void InitApp(AppState *state){
 		exit(EXIT_FAILURE);
 	}
 
+	// Init variables
 	state->elapsedTimeBuffer[0] = '\0';
 	state->trackLengthBuffer[0] = '\0';
 	state->nowPlayingBuffer[0] = '\0';
@@ -224,10 +228,13 @@ void DrawUI(AppState *state){
 
 	// Play Button
 	state->playButtonState = GuiButton(PLAY_BUTTON_REC, GuiIconText(131, NULL));
+
 	// Pause Button
 	state->pauseButtonState = GuiButton(PAUSE_BUTTON_REC, GuiIconText(132, NULL));
+
 	// Stop Button
 	state->stopButtonState = GuiButton(STOP_BUTTON_REC, GuiIconText(133, NULL));
+
 	// Open Button
 	state->openButtonState = GuiButton(OPEN_BUTTON_REC, GuiIconText(3, NULL));
 
