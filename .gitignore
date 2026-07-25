@@ -22,3 +22,6 @@ __pycache__/
 
 # pnpm
 .pnpm-store/
+
+# claude
+architecture.md

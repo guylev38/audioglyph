@@ -41,6 +41,12 @@ const items = [
     value: 3,
   },
 ];
+
+const bookOptions = [
+  { title: "edit", prependIcon: "mdi-edit", code: "edit" },
+  { type: "divider" },
+  { title: "Remove", prependIcon: "mdi-trash-can", code: "delete" },
+];
 </script>
 
 <template>
@@ -62,9 +68,13 @@ const items = [
         </template>
 
         <template v-slot:append>
-          <v-btn>
-            <v-icon> mdi-dots-vertical </v-icon>
-          </v-btn>
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn>
+                <v-icon> mdi-dots-vertical </v-icon>
+              </v-btn>
+            </template>
+          </v-menu>
         </template>
       </v-list-item>
     </v-list>
