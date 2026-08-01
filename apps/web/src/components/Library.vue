@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { ref, type Ref } from "vue";
+import AddBook from "./forms/AddBook.vue";
+
 const books = [
   {
     title: "Book 1",
@@ -14,6 +17,8 @@ const bookOptions = [
   { title: "Edit", prependIcon: "mdi-pencil", code: "book-edit" },
   { title: "Remove", prependIcon: "mdi-trash-can", code: "book-delete" },
 ];
+
+const addBookOpen: Ref<boolean> = ref(false);
 </script>
 
 <template>
